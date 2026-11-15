@@ -3,7 +3,7 @@ const SUPABASE_URL = "https://octkotsbkhvcuxwkzopg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gut8UJBnqJIOxDnBOwzAVg_80T6m7u-";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
-let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[];
+let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[],activeDeveloperWorkspaceId=null;
 const views=["authView","setupView","appView","developerView","developerWorkspaceView"];
 let closingFromPopState=false;
 function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView");syncBackButton();}
@@ -136,26 +136,46 @@ $("backToDeveloperBtn").addEventListener("click",()=>showView("developerView"));
 async function openDeveloperWorkspace(id){
  const selected=developerWorkspaces.find(x=>x.id===id);
  if(!selected)return;
+ activeDeveloperWorkspaceId=id;
  msg("platformMessage","Загружаю склад…");
- const [members,inventory,history]=await Promise.all([
-  db.from("workspace_members").select("user_id,role").eq("workspace_id",id),
-  db.from("inventory").select("*").eq("workspace_id",id).order("make").order("model"),
-  db.from("stock_movements").select("movement_type,quantity,note,created_at,unit_price,inventory(make,model)").eq("workspace_id",id).order("created_at",{ascending:false}).limit(30)
- ]);
- const error=members.error||inventory.error||history.error;
- if(error){msg("platformMessage","Не удалось открыть склад: "+error.message);return;}
- const products=inventory.data||[];
- $("devWorkspaceTitle").textContent=selected.name;
- $("devMembersCount").textContent=(members.data||[]).length;
- $("devProductsCount").textContent=products.length;
- $("devQuantityCount").textContent=products.reduce((sum,x)=>sum+Number(x.quantity||0),0);
- $("devInventoryBody").innerHTML=products.map(x=>'<tr><td data-label="Автомобиль"><strong>'+esc(x.make)+' '+esc(x.model)+'</strong><small>'+esc(x.year||"")+'</small></td><td data-label="Артикул">'+esc(x.part_number||"—")+'</td><td data-label="Тип">'+esc(x.glass_type||"—")+'</td><td data-label="Количество">'+x.quantity+'</td><td data-label="Закупка">'+money(x.purchase_price)+' сом</td><td data-label="Продажа">'+money(x.sale_price)+' сом</td><td data-label="Поставщик">'+esc(x.supplier||"—")+'</td><td data-label="Место">'+esc(x.location||"—")+'</td></tr>').join("")||'<tr><td colspan="8">В этом складе пока нет товаров.</td></tr>';
- $("devMovementList").innerHTML=(history.data||[]).map(m=>{
-  const label=m.movement_type==="in"?"Приход":m.movement_type==="out"?"Расход":"Коррекция";
-  return '<div class="history-item"><div><b>'+esc(m.inventory?.make||"Товар")+' '+esc(m.inventory?.model||"")+'</b><small>'+new Date(m.created_at).toLocaleString("ru-RU")+' · '+esc(m.note||"Без комментария")+'</small></div><div class="history-type '+m.movement_type+'">'+label+': '+m.quantity+'</div></div>';
- }).join("")||'<p class="muted">Операций пока нет.</p>';
- history.pushState({glassstockNav:"page",page:"developerWorkspace"},"","#company-"+encodeURIComponent(id));showView("developerWorkspaceView");
+ try{
+  const {data,error}=await db.rpc("platform_get_workspace_details",{p_workspace_id:id});
+  if(error)throw error;
+  if(!data)throw new Error("Сервер вернул пустой ответ");
+  const members=data.members||[],products=data.inventory||[],historyRows=data.movements||[];
+  $("devWorkspaceTitle").textContent=selected.name;
+  $("devMembersCount").textContent=members.length;
+  $("devProductsCount").textContent=products.length;
+  $("devQuantityCount").textContent=products.reduce((sum,x)=>sum+Number(x.quantity||0),0);
+  $("devTeamList").innerHTML=members.map(m=>{
+   const label=m.role==="owner"?"Владелец":m.role==="manager"?"Менеджер":"Сотрудник";
+   const who=m.user_id===currentUser.id?"Ты":m.user_id.slice(0,8)+"…";
+   const remove=m.role==="owner"?"":'<button class="mini member-remove" data-dev-remove="'+m.user_id+'">Удалить</button>';
+   return '<div class="team-row"><div><b>'+esc(who)+'</b><small>'+label+'</small></div>'+remove+'</div>';
+  }).join("")||'<p class="muted">Участников пока нет.</p>';
+  $("devInventoryBody").innerHTML=products.map(x=>'<tr><td data-label="Автомобиль"><strong>'+esc(x.make)+' '+esc(x.model)+'</strong><small>'+esc(x.year||"")+'</small></td><td data-label="Артикул">'+esc(x.part_number||"—")+'</td><td data-label="Тип">'+esc(x.glass_type||"—")+'</td><td data-label="Количество">'+x.quantity+'</td><td data-label="Закупка">'+money(x.purchase_price)+' сом</td><td data-label="Продажа">'+money(x.sale_price)+' сом</td><td data-label="Поставщик">'+esc(x.supplier||"—")+'</td><td data-label="Место">'+esc(x.location||"—")+'</td></tr>').join("")||'<tr><td colspan="8">В этом складе пока нет товаров.</td></tr>';
+  $("devMovementList").innerHTML=historyRows.map(m=>{
+   const label=m.movement_type==="in"?"Приход":m.movement_type==="out"?"Расход":"Коррекция";
+   return '<div class="history-item"><div><b>'+esc(m.inventory?.make||"Товар")+' '+esc(m.inventory?.model||"")+'</b><small>'+new Date(m.created_at).toLocaleString("ru-RU")+' · '+esc(m.note||"Без комментария")+'</small></div><div class="history-type '+m.movement_type+'">'+label+': '+m.quantity+'</div></div>';
+  }).join("")||'<p class="muted">Операций пока нет.</p>';
+  window.history.pushState({glassstockNav:"page",page:"developerWorkspace"},"","#company-"+encodeURIComponent(id));
+  showView("developerWorkspaceView");
+  msg("platformMessage","Склад загружен.",true);
+ }catch(error){
+  msg("platformMessage","Не удалось открыть склад: "+(error.message||String(error)));
+ }
 }
+$("devTeamList").addEventListener("click",async e=>{
+ const btn=e.target.closest("[data-dev-remove]");
+ if(!btn||!activeDeveloperWorkspaceId)return;
+ const userId=btn.dataset.devRemove;
+ if(!confirm("Удалить этого участника из склада?"))return;
+ btn.disabled=true;
+ const {error}=await db.rpc("remove_workspace_member",{p_workspace_id:activeDeveloperWorkspaceId,p_user_id:userId});
+ if(error){btn.disabled=false;toast("Не удалось удалить: "+error.message);return;}
+ toast("Участник удалён");
+ await openDeveloperWorkspace(activeDeveloperWorkspaceId);
+});
 
 $("createWorkspaceBtn").addEventListener("click",async()=>{
  msg("setupMessage","Создаю склад…");
@@ -183,7 +203,7 @@ function renderTeam(){
  $("teamList").innerHTML=teamMembers.map(m=>{
   const who=m.user_id===currentUser.id?"Ты":esc(m.user_id.slice(0,8)+"…");
   if(m.role==="owner")return '<div class="team-row"><div><b>'+who+'</b><small>Владелец</small></div></div>';
-  return '<div class="team-row"><div><b>'+who+'</b><small>'+new Date(m.created_at).toLocaleDateString("ru-RU")+'</small></div><div class="team-controls"><select data-role-user="'+m.user_id+'"><option value="staff" '+(m.role==="staff"?"selected":"")+'>Сотрудник</option><option value="manager" '+(m.role==="manager"?"selected":"")+'>Менеджер</option></select><button class="mini" data-save-role="'+m.user_id+'">Сохранить</button></div></div>';
+  return '<div class="team-row"><div><b>'+who+'</b><small>'+new Date(m.created_at).toLocaleDateString("ru-RU")+'</small></div><div class="team-controls"><select data-role-user="'+m.user_id+'"><option value="staff" '+(m.role==="staff"?"selected":"")+'>Сотрудник</option><option value="manager" '+(m.role==="manager"?"selected":"")+'>Менеджер</option></select><button class="mini" data-save-role="'+m.user_id+'">Сохранить</button><button class="mini member-remove" data-owner-remove="'+m.user_id+'">Удалить</button></div></div>';
  }).join("")||'<p class="muted">Пока только владелец.</p>';
 }
 function render(){
@@ -254,6 +274,15 @@ $("movementForm").addEventListener("submit",async e=>{
 });
 $("teamBtn").addEventListener("click",async()=>{await refresh();openDialog("teamDialog");});
 $("teamList").addEventListener("click",async e=>{
+ const remove=e.target.closest("[data-owner-remove]");
+ if(remove){
+  const userId=remove.dataset.ownerRemove;
+  if(!confirm("Удалить участника из команды?"))return;
+  remove.disabled=true;
+  const {error}=await db.rpc("remove_workspace_member",{p_workspace_id:workspace.id,p_user_id:userId});
+  if(error){remove.disabled=false;toast("Не удалось удалить: "+error.message);return;}
+  toast("Участник удалён");await refresh();return;
+ }
  const btn=e.target.closest("[data-save-role]");if(!btn)return;
  const userId=btn.dataset.saveRole,select=$("teamList").querySelector('[data-role-user="'+userId+'"]');
  btn.disabled=true;const {error}=await db.rpc("set_workspace_member_role",{p_user_id:userId,p_role:select.value});btn.disabled=false;
