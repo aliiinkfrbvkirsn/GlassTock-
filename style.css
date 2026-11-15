@@ -28,3 +28,6 @@ dialog{width:min(94vw,520px);border:1px solid #34475f;border-radius:20px;backgro
 .team-controls{display:flex;align-items:center;gap:6px}
 .team-controls select{margin:0;min-width:115px;padding:8px;font-size:11px}
 @media(max-width:700px){.report-strip{grid-template-columns:1fr}.welcome-actions{width:100%}.welcome-actions button{flex:1}.team-row{align-items:flex-start;flex-direction:column}.team-controls{width:100%}.team-controls select{flex:1}}
+
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:390px){.stats{grid-template-columns:1fr}}
