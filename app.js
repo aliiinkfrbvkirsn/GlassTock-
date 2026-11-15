@@ -66,7 +66,7 @@ async function init(){
 $("authForm").addEventListener("submit",async e=>{
  e.preventDefault();msg("authMessage","");$("authSubmit").disabled=true;
  const email=$("email").value.trim(),password=$("password").value;
- const result=tab==="signup"?await db.auth.signUp({email,password}):await db.auth.signInWithPassword({email,password});
+ const result=tab==="signup"?await db.auth.signUp({email,password,options:{emailRedirectTo:"https://aliiinkfrbvkirsn.github.io/GlassTock-/"}}):await db.auth.signInWithPassword({email,password});
  $("authSubmit").disabled=false;
  if(result.error){msg("authMessage",result.error.message);return;}
  if(tab==="signup"&&!result.data.session){msg("authMessage","Аккаунт создан. Проверь почту и подтверди адрес, затем войди.",true);return;}
