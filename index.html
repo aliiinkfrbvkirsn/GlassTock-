@@ -18,19 +18,19 @@
   <main>
     <section id="authView" class="auth-wrap"><div class="auth-card">
       <div class="eyebrow">ОБЛАЧНЫЙ СКЛАД</div><h1>Весь склад<br><span>в одном месте.</span></h1>
-      <p class="muted">Войди в аккаунт или зарегистрируйся. Разработчик, владелец и сотрудники используют один экран входа.</p>
+      <p class="muted">Войди или зарегистрируйся. <b>Если ты сотрудник:</b> выбери «Регистрация», создай аккаунт и подтверди почту. После входа появится поле для кода приглашения от владельца. Не создавай отдельный склад.</p>
       <div class="tabs"><button class="tab active" data-tab="login">Вход</button><button class="tab" data-tab="signup">Регистрация</button></div>
       <form id="authForm"><label>Email<input id="email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
       <label>Пароль<input id="password" type="password" autocomplete="current-password" minlength="6" required placeholder="Минимум 6 символов"></label>
       <button class="primary full" id="authSubmit">Войти</button></form><p id="authMessage" class="message" aria-live="polite"></p>
     </div></section>
     <section id="setupView" class="auth-wrap hidden"><div class="auth-card">
-      <div class="eyebrow">ПОСЛЕДНИЙ ШАГ НАСТРОЙКИ</div><h1>Подключи<br><span>свой склад.</span></h1>
-      <p class="muted">Если ты владелец компании — создай отдельный склад для своей организации. Если ты сотрудник — введи код приглашения.</p>
-      <label>Название склада<input id="workspaceName" value="GlassStock" maxlength="60"></label>
-      <button id="createWorkspaceBtn" class="primary full">Создать мой склад</button><div class="separator">или</div>
-      <label>Код приглашения<input id="joinCode" autocapitalize="characters" placeholder="Например, A1B2C3D4E5"></label>
-      <button id="joinWorkspaceBtn" class="secondary full">Присоединиться к складу</button><p id="setupMessage" class="message" aria-live="polite"></p>
+      <div class="eyebrow">ПОДКЛЮЧЕНИЕ К КОМАНДЕ</div><h1>Введи код<br><span>своего склада.</span></h1>
+      <p class="muted">Если ты сотрудник, попроси у владельца код приглашения и введи его ниже. <b>Не нажимай «Создать мой склад»</b> — эта кнопка нужна только владельцу новой компании.</p>
+      <label>Код приглашения<input id="joinCode" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Введи код от владельца"></label>
+      <button id="joinWorkspaceBtn" class="primary full">Присоединиться к складу</button><div class="separator">Ты владелец и создаёшь новую компанию?</div>
+      <label>Название нового склада<input id="workspaceName" value="GlassStock" maxlength="60"></label>
+      <button id="createWorkspaceBtn" class="secondary full">Создать мой склад</button><p id="setupMessage" class="message" aria-live="polite"></p>
     </div></section>
     <section id="appView" class="hidden">
       <div class="welcome-row"><div><div class="eyebrow">ОБЩИЙ СКЛАД</div><h1 id="workspaceTitle">GlassStock</h1><p id="userLabel" class="muted"></p></div><div class="welcome-actions"><button id="teamBtn" class="secondary hidden">Команда</button><button id="inviteBtn" class="secondary">Код для команды</button></div></div>
