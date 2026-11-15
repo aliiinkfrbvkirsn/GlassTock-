@@ -3,7 +3,7 @@ const SUPABASE_URL = "https://octkotsbkhvcuxwkzopg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gut8UJBnqJIOxDnBOwzAVg_80T6m7u-";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
-let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[],activeDeveloperWorkspaceId=null;
+let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[],activeDeveloperWorkspaceId=null,myHistoryRows=[],myHistoryFilter="all";
 const views=["authView","setupView","appView","developerView","developerWorkspaceView"];
 let closingFromPopState=false;
 function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView");syncBackButton();}
@@ -128,6 +128,39 @@ async function renderDeveloperDashboard(){
  }).join("")||'<p class="muted">Пока нет созданных компаний.</p>';
  msg("platformMessage","Данные обновлены.",true);
 }
+async function loadMyHistory(){
+ $("myHistoryUser").textContent=(currentUser.email||"")+" · "+(workspace?.name||"");
+ $("myHistoryMessage").textContent="Загружаю историю…";
+ $("myHistoryList").innerHTML="";
+ const {data,error}=await db.from("stock_movements").select("id,user_id,movement_type,quantity,note,created_at,unit_price,inventory(make,model,part_number)").eq("workspace_id",workspace.id).eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(2000);
+ if(error){$("myHistoryMessage").textContent="Не удалось загрузить историю: "+error.message;return;}
+ myHistoryRows=data||[];
+ $("myHistoryIn").textContent=myHistoryRows.filter(x=>x.movement_type==="in").reduce((n,x)=>n+Number(x.quantity||0),0);
+ $("myHistoryOut").textContent=myHistoryRows.filter(x=>x.movement_type==="out").reduce((n,x)=>n+Number(x.quantity||0),0);
+ $("myHistoryCount").textContent=myHistoryRows.length;
+ $("myHistoryMessage").textContent=myHistoryRows.length?"Здесь показаны только твои действия.":"Пока у тебя нет сохранённых операций.";
+ renderMyHistory();
+}
+function renderMyHistory(){
+ document.querySelectorAll("[data-my-history-filter]").forEach(b=>b.classList.toggle("active",b.dataset.myHistoryFilter===myHistoryFilter));
+ const rows=myHistoryRows.filter(m=>myHistoryFilter==="all"||m.movement_type===myHistoryFilter);
+ $("myHistoryList").innerHTML=rows.map(m=>{
+  const label=m.movement_type==="in"?"Пополнение":m.movement_type==="out"?"Продажа / расход":"Корректировка";
+  const sign=m.movement_type==="in"?"+":m.movement_type==="out"?"−":"";
+  const name=(m.inventory?.make||"Стекло")+" "+(m.inventory?.model||"");
+  const details=[m.inventory?.part_number?"Артикул: "+m.inventory.part_number:"",m.note||"",m.unit_price!=null?"Цена: "+money(m.unit_price)+" сом/шт.":""].filter(Boolean).join(" · ");
+  return '<div class="history-item"><div><b>'+esc(name.trim())+'</b><small>'+label+' · '+new Date(m.created_at).toLocaleString("ru-RU")+(details?" · "+esc(details):"")+'</small></div><div class="history-type '+(m.movement_type==="in"?"in":m.movement_type==="out"?"out":"adjust")+'">'+sign+money(m.quantity)+'</div></div>';
+ }).join("")||'<p class="muted">В этой категории пока нет действий.</p>';
+}
+$("myHistoryBtn").addEventListener("click",async()=>{
+ if(!workspace||!currentUser)return;
+ myHistoryFilter="all";openDialog("myHistoryDialog");await loadMyHistory();
+});
+$("myHistoryDialog").addEventListener("click",e=>{
+ const btn=e.target.closest("[data-my-history-filter]");
+ if(!btn)return;
+ myHistoryFilter=btn.dataset.myHistoryFilter;renderMyHistory();
+});
 $("openMyWorkspaceBtn").addEventListener("click",async()=>{
  if(!workspace){toast("У этого аккаунта пока нет собственного склада");return;}
  history.pushState({glassstockNav:"page",page:"myWorkspace"},"","#my-workspace");showView("appView");await refresh();
