@@ -73,6 +73,7 @@ $("authForm").addEventListener("submit",async e=>{
  currentUser=result.data.user;await routeUser();
 });
 $("logoutBtn").addEventListener("click",async()=>{await db.auth.signOut();});
+$("ownerLoginBtn").addEventListener("click",async()=>{setTab("login");$("password").value="";msg("authMessage","");await db.auth.signOut();showView("authView");setConnection("Вход для владельца");});
 
 async function routeUser(){
  setConnection("Загрузка…");
