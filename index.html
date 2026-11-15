@@ -48,7 +48,7 @@
       </div>
       <div class="stats">
         <article class="stat"><span>Компаний / складов</span><b id="platformWorkspaceCount">0</b></article>
-        <article class="stat"><span>Участников</span><b id="platformMemberCount">0</b></article>
+        <article class="stat stat-clickable" id="platformMembersCard" role="button" tabindex="0" aria-label="Открыть список участников"><span>Участников · нажми</span><b id="platformMemberCount">0</b></article>
         <article class="stat"><span>Позиций товара</span><b id="platformItemCount">0</b></article>
         <article class="stat"><span>Стёкол на всех складах</span><b id="platformStockCount">0</b></article>
       </div>
@@ -72,6 +72,7 @@
       <div id="devMovementList" class="history-list"></div>
     </section>
   </main>
+  <dialog id="platformMembersDialog"><div class="dialog-form"><div class="dialog-head"><h2>Все участники</h2><button class="close" type="button" data-close="platformMembersDialog">×</button></div><p class="muted">Участники всех компаний. Для удаления открой нужную компанию.</p><div id="platformMembersList" class="team-list"></div></div></dialog>
   <dialog id="itemDialog"><form id="itemForm" method="dialog" class="dialog-form">
     <div class="dialog-head"><h2 id="itemDialogTitle">Новая позиция</h2><button type="button" class="close" data-close="itemDialog">×</button></div>
     <input id="itemId" type="hidden"><label>Марка автомобиля<input id="make" required maxlength="80" placeholder="Toyota"></label><label>Модель<input id="model" required maxlength="100" placeholder="Camry"></label>
