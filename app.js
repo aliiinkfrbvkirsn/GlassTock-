@@ -3,8 +3,8 @@ const SUPABASE_URL = "https://octkotsbkhvcuxwkzopg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gut8UJBnqJIOxDnBOwzAVg_80T6m7u-";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
-let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false;
-const views=["authView","setupView","appView","developerView"];
+let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[];
+const views=["authView","setupView","appView","developerView","developerWorkspaceView"];
 function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView");}
 function msg(id,text,ok=false){const el=$(id);el.textContent=text;el.classList.toggle("success",ok);}
 function toast(text){const el=$("toast");el.textContent=text;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2600);}
@@ -67,7 +67,7 @@ async function renderDeveloperDashboard(){
  ]);
  const error=w.error||m.error||i.error;
  if(error){msg("platformMessage","Не удалось загрузить обзор: "+error.message);return;}
- const workspaces=w.data||[],members=m.data||[],stock=i.data||[];
+ const workspaces=w.data||[],members=m.data||[],stock=i.data||[];\n developerWorkspaces=workspaces;
  $("platformWorkspaceCount").textContent=workspaces.length;
  $("platformMemberCount").textContent=members.length;
  $("platformItemCount").textContent=stock.length;
@@ -76,7 +76,7 @@ async function renderDeveloperDashboard(){
   const team=members.filter(x=>x.workspace_id===ws.id),owner=team.find(x=>x.role==="owner");
   const products=stock.filter(x=>x.workspace_id===ws.id);
   const qty=products.reduce((sum,x)=>sum+Number(x.quantity||0),0);
-  return '<div class="history-item"><div><b>'+esc(ws.name)+'</b><small>Создан: '+new Date(ws.created_at).toLocaleDateString("ru-RU")+' · Участников: '+team.length+' · Владелец: '+(owner?'есть':'не назначен')+'</small><small>Позиций: '+products.length+' · Остаток: '+qty+' шт.</small></div><div class="history-type">Склад</div></div>';
+  return '<div class="history-item"><div><b>'+esc(ws.name)+'</b><small>Создан: '+new Date(ws.created_at).toLocaleDateString("ru-RU")+' · Участников: '+team.length+' · Владелец: '+(owner?'есть':'не назначен')+'</small><small>Позиций: '+products.length+' · Остаток: '+qty+' шт.</small></div><button class="mini" data-open-workspace="'+ws.id+'">Просмотреть</button></div>';
  }).join("")||'<p class="muted">Пока нет созданных компаний.</p>';
  msg("platformMessage","Данные обновлены.",true);
 }
@@ -85,6 +85,35 @@ $("openMyWorkspaceBtn").addEventListener("click",async()=>{
  showView("appView");await refresh();
 });
 $("refreshPlatformBtn").addEventListener("click",renderDeveloperDashboard);
+$("platformWorkspaceList").addEventListener("click",e=>{
+ const button=e.target.closest("[data-open-workspace]");
+ if(button)openDeveloperWorkspace(button.dataset.openWorkspace);
+});
+$("backToDeveloperBtn").addEventListener("click",()=>showView("developerView"));
+async function openDeveloperWorkspace(id){
+ const selected=developerWorkspaces.find(x=>x.id===id);
+ if(!selected)return;
+ msg("platformMessage","Загружаю склад…");
+ const [members,inventory,history]=await Promise.all([
+  db.from("workspace_members").select("user_id,role").eq("workspace_id",id),
+  db.from("inventory").select("*").eq("workspace_id",id).order("make").order("model"),
+  db.from("stock_movements").select("movement_type,quantity,note,created_at,unit_price,inventory(make,model)").eq("workspace_id",id).order("created_at",{ascending:false}).limit(30)
+ ]);
+ const error=members.error||inventory.error||history.error;
+ if(error){msg("platformMessage","Не удалось открыть склад: "+error.message);return;}
+ const products=inventory.data||[];
+ $("devWorkspaceTitle").textContent=selected.name;
+ $("devMembersCount").textContent=(members.data||[]).length;
+ $("devProductsCount").textContent=products.length;
+ $("devQuantityCount").textContent=products.reduce((sum,x)=>sum+Number(x.quantity||0),0);
+ $("devInventoryBody").innerHTML=products.map(x=>'<tr><td data-label="Автомобиль"><strong>'+esc(x.make)+' '+esc(x.model)+'</strong><small>'+esc(x.year||"")+'</small></td><td data-label="Артикул">'+esc(x.part_number||"—")+'</td><td data-label="Тип">'+esc(x.glass_type||"—")+'</td><td data-label="Количество">'+x.quantity+'</td><td data-label="Закупка">'+money(x.purchase_price)+' сом</td><td data-label="Продажа">'+money(x.sale_price)+' сом</td><td data-label="Поставщик">'+esc(x.supplier||"—")+'</td><td data-label="Место">'+esc(x.location||"—")+'</td></tr>').join("")||'<tr><td colspan="8">В этом складе пока нет товаров.</td></tr>';
+ $("devMovementList").innerHTML=(history.data||[]).map(m=>{
+  const label=m.movement_type==="in"?"Приход":m.movement_type==="out"?"Расход":"Коррекция";
+  return '<div class="history-item"><div><b>'+esc(m.inventory?.make||"Товар")+' '+esc(m.inventory?.model||"")+'</b><small>'+new Date(m.created_at).toLocaleString("ru-RU")+' · '+esc(m.note||"Без комментария")+'</small></div><div class="history-type '+m.movement_type+'">'+label+': '+m.quantity+'</div></div>';
+ }).join("")||'<p class="muted">Операций пока нет.</p>';
+ showView("developerWorkspaceView");
+}
+
 $("createWorkspaceBtn").addEventListener("click",async()=>{
  msg("setupMessage","Создаю склад…");
  const {error}=await db.rpc("create_glassstock_workspace",{p_name:$("workspaceName").value.trim()||"GlassStock"});
