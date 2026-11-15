@@ -287,7 +287,7 @@ $("addBtn").addEventListener("click",()=>openItem());
 function openItem(item=null){
  $("itemForm").reset();$("itemId").value=item?.id||"";$("itemDialogTitle").textContent=item?"Изменить позицию":"Новая позиция";
  $("make").value=item?.make||"";$("model").value=item?.model||"";$("year").value=item?.year||"";$("partNumber").value=item?.part_number||"";
- $("glassType").value=item?.glass_type||"";$("location").value=item?.location||"";$("quantity").value=item?.quantity??0;$("minQuantity").value=item?.min_quantity??0;
+ $("glassType").value=item?.glass_type||"";$("location").value=item?.location||"";$("quantity").value=item?.quantity??0;$("quantity").disabled=!!item;$("minQuantity").value=item?.min_quantity??0;
  $("purchasePrice").value=item?.purchase_price??0;$("salePrice").value=item?.sale_price??0;$("supplier").value=item?.supplier||"";$("notes").value=item?.notes||"";
  msg("itemMessage","");openDialog("itemDialog");
 }
