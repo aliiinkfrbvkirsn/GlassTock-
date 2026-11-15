@@ -3,8 +3,8 @@ const SUPABASE_URL = "https://octkotsbkhvcuxwkzopg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gut8UJBnqJIOxDnBOwzAVg_80T6m7u-";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
-let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[];
-const views=["authView","setupView","appView"];
+let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false;
+const views=["authView","setupView","appView","developerView"];
 function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView");}
 function msg(id,text,ok=false){const el=$(id);el.textContent=text;el.classList.toggle("success",ok);}
 function toast(text){const el=$("toast");el.textContent=text;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2600);}
@@ -35,9 +35,18 @@ $("logoutBtn").addEventListener("click",async()=>{await db.auth.signOut();});
 
 async function routeUser(){
  setConnection("Загрузка…");
+ const adminResult=await db.rpc("is_platform_admin");
+ isPlatformAdmin=!adminResult.error&&adminResult.data===true;
  const {data:member,error}=await db.from("workspace_members").select("workspace_id,role").eq("user_id",currentUser.id).maybeSingle();
- if(error){setConnection("Ошибка доступа","bad");showView("setupView");msg("setupMessage","Не удалось проверить участие: "+error.message);return;}
- if(!member){showView("setupView");setConnection("Нужна настройка");return;}
+ if(error){
+  if(isPlatformAdmin){membership=null;workspace=null;showView("developerView");setConnection("Панель разработчика","ok");await renderDeveloperDashboard();return;}
+  setConnection("Ошибка доступа","bad");showView("setupView");msg("setupMessage","Не удалось проверить участие: "+error.message);return;
+ }
+ if(!member){
+  membership=null;workspace=null;
+  if(isPlatformAdmin){showView("developerView");setConnection("Панель разработчика","ok");await renderDeveloperDashboard();return;}
+  showView("setupView");setConnection("Нужна настройка");return;
+ }
  membership=member;
  const {data:ws,error:wsErr}=await db.from("workspaces").select("id,name,join_code").eq("id",member.workspace_id).single();
  if(wsErr){showView("setupView");msg("setupMessage",wsErr.message);return;}
@@ -46,8 +55,36 @@ async function routeUser(){
  $("teamBtn").classList.toggle("hidden",member.role!=="owner");
  $("inviteBtn").classList.toggle("hidden",member.role!=="owner");
  $("addBtn").classList.toggle("hidden",member.role==="staff");
- showView("appView");setConnection("Облако подключено","ok");await refresh();
+ if(isPlatformAdmin){showView("developerView");setConnection("Разработчик · облако подключено","ok");await renderDeveloperDashboard();}
+ else{showView("appView");setConnection("Облако подключено","ok");await refresh();}
 }
+async function renderDeveloperDashboard(){
+ msg("platformMessage","Загружаю организации…");
+ const [w,m,i]=await Promise.all([
+  db.from("workspaces").select("id,name,created_at").order("created_at",{ascending:false}),
+  db.from("workspace_members").select("workspace_id,user_id,role,created_at"),
+  db.from("inventory").select("workspace_id,id,quantity")
+ ]);
+ const error=w.error||m.error||i.error;
+ if(error){msg("platformMessage","Не удалось загрузить обзор: "+error.message);return;}
+ const workspaces=w.data||[],members=m.data||[],stock=i.data||[];
+ $("platformWorkspaceCount").textContent=workspaces.length;
+ $("platformMemberCount").textContent=members.length;
+ $("platformItemCount").textContent=stock.length;
+ $("platformStockCount").textContent=stock.reduce((sum,row)=>sum+Number(row.quantity||0),0);
+ $("platformWorkspaceList").innerHTML=workspaces.map(ws=>{
+  const team=members.filter(x=>x.workspace_id===ws.id),owner=team.find(x=>x.role==="owner");
+  const products=stock.filter(x=>x.workspace_id===ws.id);
+  const qty=products.reduce((sum,x)=>sum+Number(x.quantity||0),0);
+  return '<div class="history-item"><div><b>'+esc(ws.name)+'</b><small>Создан: '+new Date(ws.created_at).toLocaleDateString("ru-RU")+' · Участников: '+team.length+' · Владелец: '+(owner?'есть':'не назначен')+'</small><small>Позиций: '+products.length+' · Остаток: '+qty+' шт.</small></div><div class="history-type">Склад</div></div>';
+ }).join("")||'<p class="muted">Пока нет созданных компаний.</p>';
+ msg("platformMessage","Данные обновлены.",true);
+}
+$("openMyWorkspaceBtn").addEventListener("click",async()=>{
+ if(!workspace){toast("У этого аккаунта пока нет собственного склада");return;}
+ showView("appView");await refresh();
+});
+$("refreshPlatformBtn").addEventListener("click",renderDeveloperDashboard);
 $("createWorkspaceBtn").addEventListener("click",async()=>{
  msg("setupMessage","Создаю склад…");
  const {error}=await db.rpc("create_glassstock_workspace",{p_name:$("workspaceName").value.trim()||"GlassStock"});
