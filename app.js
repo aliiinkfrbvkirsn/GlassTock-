@@ -241,6 +241,8 @@ async function refresh(){
  ]);
  if(a.error||b.error){toast("Ошибка загрузки: "+(a.error||b.error).message);return;}
  items=a.data||[];movements=b.data||[];teamMembers=c.data||[];render();
+ const linkedItem=new URLSearchParams(location.search).get("item");
+ if(linkedItem){const found=items.find(x=>x.id===linkedItem);if(found){$("search").value=[found.make,found.model,found.part_number||""].join(" ");render();toast("Найдено стекло: "+found.make+" "+found.model);}}
 }
 function renderTeam(){
  if(membership?.role!=="owner")return;
@@ -267,7 +269,7 @@ function render(){
    return (!q||t.includes(q))&&(filter==="all"||(filter==="low"&&x.quantity<=x.min_quantity)||(filter==="empty"&&x.quantity===0));
   });
  $("inventoryBody").innerHTML=filtered.map(x=>{
-  const actions='<button class="mini action-move" data-move="'+x.id+'" aria-label="Приход или расход" title="Приход / расход"><span aria-hidden="true">＋</span><b>Движение</b></button>'+
+  const actions='<button class="mini action-qr" data-qr="'+x.id+'" aria-label="QR-этикетка" title="Создать QR-этикетку">QR</button><button class="mini action-move" data-move="'+x.id+'" aria-label="Приход или расход" title="Приход / расход"><span aria-hidden="true">＋</span><b>Движение</b></button>'+
    (membership.role!=="staff"?'<button class="mini action-edit" data-edit="'+x.id+'" aria-label="Изменить позицию" title="Изменить позицию"><span aria-hidden="true">✎</span><b>Изменить</b></button><button class="mini action-delete" data-delete="'+x.id+'" aria-label="Удалить позицию" title="Удалить позицию"><span aria-hidden="true">×</span></button>':"");
   return '<tr><td data-label="Автомобиль"><strong>'+esc(x.make)+' '+esc(x.model)+'</strong><small>'+esc(x.year||"")+'</small></td>'+
    '<td data-label="Артикул">'+esc(x.part_number||"—")+'</td><td data-label="Тип стекла">'+esc(x.glass_type||"—")+'</td>'+
@@ -292,7 +294,8 @@ function openItem(item=null){
  msg("itemMessage","");openDialog("itemDialog");
 }
 $("inventoryBody").addEventListener("click",async e=>{
- const edit=e.target.closest("[data-edit]"),move=e.target.closest("[data-move]"),del=e.target.closest("[data-delete]");
+ const edit=e.target.closest("[data-edit]"),move=e.target.closest("[data-move]"),del=e.target.closest("[data-delete]"),qr=e.target.closest("[data-qr]");
+ if(qr){openQrLabel(items.find(x=>x.id===qr.dataset.qr));}
  if(edit){openItem(items.find(x=>x.id===edit.dataset.edit));}
  if(move){const x=items.find(x=>x.id===move.dataset.move);$("movementForm").reset();$("movementItemId").value=x.id;$("movementItemName").textContent=x.make+" "+x.model+" · остаток "+x.quantity;setMovementPrice(x);openDialog("movementDialog");}
  if(del){const x=items.find(x=>x.id===del.dataset.delete);if(!confirm("Удалить "+x.make+" "+x.model+"?"))return;const {error}=await db.from("inventory").delete().eq("id",x.id);if(error)toast(error.message);else{toast("Позиция удалена");await refresh();}}
@@ -309,6 +312,19 @@ $("itemForm").addEventListener("submit",async e=>{
  }
  $("itemDialog").close();toast("Сохранено");await refresh();
 });
+function openQrLabel(item){
+ if(!item)return;
+ $("qrLabelName").textContent=(item.make+" "+item.model).trim();
+ $("qrLabelDetails").textContent=["Артикул: "+(item.part_number||"—"),"Тип: "+(item.glass_type||"—"),"Место: "+(item.location||"—"),"Остаток: "+item.quantity+" шт."].join(" · ");
+ $("qrLabelCompany").textContent=workspace?.name||"GlassStock";
+ $("qrCode").innerHTML="";
+ const url=new URL(location.href);url.search="";url.hash="";url.searchParams.set("item",item.id);
+ if(typeof QRCode==="undefined"){$("qrMessage").textContent="QR-библиотека не загрузилась. Проверь интернет и обнови страницу.";}
+ else{new QRCode($("qrCode"),{text:url.toString(),width:180,height:180,correctLevel:QRCode.CorrectLevel.M});$("qrMessage").textContent="Отсканируй код камерой, чтобы открыть эту позицию в GlassStock." ;}
+ openDialog("qrDialog");
+}
+$("inventoryBody").addEventListener("click",e=>{const btn=e.target.closest("[data-qr]");if(btn)openQrLabel(items.find(x=>x.id===btn.dataset.qr));});
+$("printQrBtn").addEventListener("click",()=>window.print());
 function setMovementPrice(item){
  const type=$("movementType").value;
  $("movementPrice").value=type==="in"?(item?.purchase_price??0):type==="out"?(item?.sale_price??0):"";
