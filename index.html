@@ -33,10 +33,10 @@
       <button id="joinWorkspaceBtn" class="secondary full">Присоединиться к складу</button><p id="setupMessage" class="message" aria-live="polite"></p>
     </div></section>
     <section id="appView" class="hidden">
-      <div class="welcome-row"><div><div class="eyebrow">ОБЩИЙ СКЛАД</div><h1 id="workspaceTitle">GlassStock</h1><p id="userLabel" class="muted"></p></div><button id="inviteBtn" class="secondary">Код для команды</button></div>
-      <div class="stats"><article class="stat"><span>Позиций</span><b id="statItems">0</b></article><article class="stat"><span>Всего стёкол</span><b id="statQty">0</b></article><article class="stat"><span>Нужно пополнить</span><b id="statLow">0</b></article></div>
+      <div class="welcome-row"><div><div class="eyebrow">ОБЩИЙ СКЛАД</div><h1 id="workspaceTitle">GlassStock</h1><p id="userLabel" class="muted"></p></div><div class="welcome-actions"><button id="teamBtn" class="secondary hidden">Команда</button><button id="inviteBtn" class="secondary">Код для команды</button></div></div>
+      <div class="stats"><article class="stat"><span>Позиций</span><b id="statItems">0</b></article><article class="stat"><span>Всего стёкол</span><b id="statQty">0</b></article><article class="stat"><span>Нужно пополнить</span><b id="statLow">0</b></article><article class="stat"><span>Закупочная стоимость остатков</span><b id="statPurchaseValue">0</b><small>сом</small></article><article class="stat"><span>Стоимость по цене продажи</span><b id="statSaleValue">0</b><small>сом</small></article></div><section class="report-strip"><div><span>Продажи за 30 дней</span><b id="reportRevenue">0 сом</b></div><div><span>Расчётная валовая прибыль</span><b id="reportProfit">0 сом</b></div></section>
       <div class="toolbar"><input id="search" placeholder="Поиск: марка, модель, артикул…"><select id="filter"><option value="all">Все позиции</option><option value="low">Мало на складе</option><option value="empty">Нет в наличии</option></select><button id="addBtn" class="primary">＋ Добавить стекло</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Марка / модель</th><th>Артикул</th><th>Тип</th><th>Остаток</th><th>Место</th><th></th></tr></thead><tbody id="inventoryBody"></tbody></table><div id="emptyState" class="empty hidden"><b>Пока нет товаров</b><p>Добавь первую позицию, и она появится у всей команды.</p></div></div>
+      <div class="table-wrap"><table><thead><tr><th>Марка / модель</th><th>Артикул</th><th>Тип</th><th>Остаток</th><th>Закупка</th><th>Продажа</th><th>Поставщик</th><th>Место</th><th></th></tr></thead><tbody id="inventoryBody"></tbody></table><div id="emptyState" class="empty hidden"><b>Пока нет товаров</b><p>Добавь первую позицию, и она появится у всей команды.</p></div></div>
       <div class="section-head"><div><div class="eyebrow">ПОСЛЕДНИЕ ДЕЙСТВИЯ</div><h2>История склада</h2></div><button id="exportBtn" class="ghost">Экспорт JSON</button></div><div id="historyList" class="history-list"></div>
     </section>
   </main>
@@ -46,16 +46,19 @@
     <div class="two"><label>Год<input id="year" maxlength="30" placeholder="2018–2022"></label><label>Артикул<input id="partNumber" maxlength="100" placeholder="Например, XYG"></label></div>
     <div class="two"><label>Тип стекла<input id="glassType" maxlength="60" placeholder="Лобовое"></label><label>Место хранения<input id="location" maxlength="80" placeholder="Стеллаж A-1"></label></div>
     <div class="two"><label>Количество<input id="quantity" type="number" min="0" step="1" required value="0"></label><label>Минимум<input id="minQuantity" type="number" min="0" step="1" value="0"></label></div>
+    <div class="two"><label>Закупочная цена, сом<input id="purchasePrice" type="number" min="0" step="0.01" value="0"></label><label>Цена продажи, сом<input id="salePrice" type="number" min="0" step="0.01" value="0"></label></div>
+    <label>Поставщик<input id="supplier" maxlength="120" placeholder="Название поставщика"></label>
     <label>Примечание<textarea id="notes" rows="2" maxlength="500"></textarea></label><p id="itemMessage" class="message"></p><button class="primary full" type="submit">Сохранить позицию</button>
   </form></dialog>
   <dialog id="movementDialog"><form id="movementForm" method="dialog" class="dialog-form">
     <div class="dialog-head"><h2>Движение товара</h2><button type="button" class="close" data-close="movementDialog">×</button></div>
     <input id="movementItemId" type="hidden"><p id="movementItemName" class="muted"></p>
     <label>Операция<select id="movementType"><option value="in">Приход</option><option value="out">Расход</option><option value="adjust">Установить остаток</option></select></label>
-    <label>Количество<input id="movementQty" type="number" min="1" step="1" required></label><label>Комментарий<input id="movementNote" maxlength="250" placeholder="Необязательно"></label>
+    <label>Количество<input id="movementQty" type="number" min="1" step="1" required></label><label>Цена за штуку, сом<input id="movementPrice" type="number" min="0" step="0.01"></label><label>Комментарий<input id="movementNote" maxlength="250" placeholder="Необязательно"></label>
     <p id="movementMessage" class="message"></p><button class="primary full" type="submit">Провести операцию</button>
   </form></dialog>
   <dialog id="inviteDialog"><div class="dialog-form"><div class="dialog-head"><h2>Приглашение команды</h2><button class="close" data-close="inviteDialog">×</button></div><p class="muted">Отправь этот код сотрудникам. Они должны зарегистрировать свои аккаунты и ввести код на этом экране.</p><div id="inviteCodeDisplay" class="invite-code"></div><button id="copyInviteBtn" class="primary full">Скопировать код</button></div></dialog>
+  <dialog id="teamDialog"><div class="dialog-form"><div class="dialog-head"><h2>Команда склада</h2><button class="close" data-close="teamDialog">×</button></div><p class="muted">Менеджер редактирует товары и цены. Сотрудник проводит приход и расход.</p><div id="teamList" class="team-list"></div></div></dialog>
   <div id="toast" class="toast" role="status"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="app.js"></script>
 </body></html>
