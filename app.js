@@ -67,7 +67,8 @@ async function renderDeveloperDashboard(){
  ]);
  const error=w.error||m.error||i.error;
  if(error){msg("platformMessage","Не удалось загрузить обзор: "+error.message);return;}
- const workspaces=w.data||[],members=m.data||[],stock=i.data||[];\n developerWorkspaces=workspaces;
+ const workspaces=w.data||[],members=m.data||[],stock=i.data||[];
+ developerWorkspaces=workspaces;
  $("platformWorkspaceCount").textContent=workspaces.length;
  $("platformMemberCount").textContent=members.length;
  $("platformItemCount").textContent=stock.length;
