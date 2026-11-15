@@ -52,7 +52,7 @@ async function markNotificationRead(id){
  renderNotifications();
 }
 let closingFromPopState=false;
-function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView");syncBackButton();}
+function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView");$("notificationsBtn").classList.toggle("hidden",id!=="appView"||!workspace);syncBackButton();}
 function syncBackButton(){
  const hasDialog=Array.from(document.querySelectorAll("dialog")).some(d=>d.open);
  const hasDetail=!$("developerWorkspaceView").classList.contains("hidden");
