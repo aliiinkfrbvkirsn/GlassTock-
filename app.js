@@ -46,6 +46,11 @@ function msg(id,text,ok=false){const el=$(id);el.textContent=text;el.classList.t
 function toast(text){const el=$("toast");el.textContent=text;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2600);}
 function setConnection(text,kind=""){const el=$("connection");el.textContent="● "+text;el.className="status "+kind;}
 function esc(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function normalizeSearchText(value=""){
+ const aliases={"ауди":"audi","бмв":"bmw","бид":"byd","чанган":"changan","шевроле":"chevrolet","дэу":"daewoo","дайхатсу":"daihatsu","форд":"ford","хонда":"honda","хундай":"hyundai","хендай":"hyundai","киа":"kia","лексус":"lexus","ман":"man","мазда":"mazda","мерседес":"mercedes","мицубиси":"mitsubishi","ниссан":"nissan","опель":"opel","рено":"renault","шкода":"skoda","сангйонг":"ssangyong","субару":"subaru","тойота":"toyota","фольксваген":"volkswagen","вольво":"volvo","ваз":"ваз","камри":"camry","королла":"corolla","прадо":"prado","рав4":"rav4","аккорд":"accord","сивик":"civic","цивик":"civic","солярис":"solaris","соната":"sonata","элантра":"elantra","крета":"creta","рио":"rio","спортейдж":"sportage","тигуан":"tiguan","пассат":"passat","гольф":"golf","джетта":"jetta","а4":"a4","а6":"a6","икс5":"x5"};
+ const map={а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ё:"e",ж:"zh",з:"z",и:"i",й:"y",к:"k",л:"l",м:"m",н:"n",о:"o",п:"p",р:"r",с:"s",т:"t",у:"u",ф:"f",х:"h",ц:"ts",ч:"ch",ш:"sh",щ:"shch",ъ:"",ы:"y",ь:"",э:"e",ю:"yu",я:"ya"};
+ return String(value).toLocaleLowerCase("ru").normalize("NFKC").replace(/ё/g,"е").split(/[^a-zа-я0-9]+/u).filter(Boolean).map(word=>aliases[word]||word.replace(/[а-я]/g,ch=>map[ch]||ch)).join(" ");
+}
 function money(v){return new Intl.NumberFormat("ru-RU",{maximumFractionDigits:2}).format(Number(v||0));}
 function setTab(next){tab=next;document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));$("authSubmit").textContent=tab==="login"?"Войти":"Создать аккаунт";}
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
@@ -191,11 +196,11 @@ function render(){
  $("statItems").textContent=items.length;$("statQty").textContent=total;$("statLow").textContent=low;
  $("statPurchaseValue").textContent=money(purchaseValue);$("statSaleValue").textContent=money(saleValue);
  $("reportRevenue").textContent=money(revenue)+" сом";$("reportProfit").textContent=money(profit)+" сом";
- const q=$("search").value.trim().toLowerCase(),filter=$("filter").value;
- const filtered=items.filter(x=>{
-  const t=[x.make,x.model,x.part_number,x.glass_type,x.location,x.year,x.supplier].join(" ").toLowerCase();
-  return (!q||t.includes(q))&&(filter==="all"||(filter==="low"&&x.quantity<=x.min_quantity)||(filter==="empty"&&x.quantity===0));
- });
+  const q=normalizeSearchText($("search").value),filter=$("filter").value;
+  const filtered=items.filter(x=>{
+   const t=normalizeSearchText([x.make,x.model,x.part_number,x.glass_type,x.location,x.year,x.supplier].join(" "));
+   return (!q||t.includes(q))&&(filter==="all"||(filter==="low"&&x.quantity<=x.min_quantity)||(filter==="empty"&&x.quantity===0));
+  });
  $("inventoryBody").innerHTML=filtered.map(x=>{
   const actions='<button class="mini action-move" data-move="'+x.id+'" aria-label="Приход или расход" title="Приход / расход"><span aria-hidden="true">＋</span><b>Движение</b></button>'+
    (membership.role!=="staff"?'<button class="mini action-edit" data-edit="'+x.id+'" aria-label="Изменить позицию" title="Изменить позицию"><span aria-hidden="true">✎</span><b>Изменить</b></button><button class="mini action-delete" data-delete="'+x.id+'" aria-label="Удалить позицию" title="Удалить позицию"><span aria-hidden="true">×</span></button>':"");
