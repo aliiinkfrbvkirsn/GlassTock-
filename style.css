@@ -149,3 +149,59 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
   .status{font-size:10px}
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+
+/* Definitive mobile header sizing v8 */
+@media(max-width:700px){
+  header.topbar{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:auto auto!important;
+    align-items:center!important;
+    justify-content:stretch!important;
+    gap:8px!important;
+    height:auto!important;
+    min-height:0!important;
+    padding:12px 14px!important;
+    overflow:hidden!important;
+  }
+  header.topbar>.brand{
+    grid-column:1!important;grid-row:1!important;
+    width:100%!important;min-width:0!important;
+    flex:none!important;
+  }
+  header.topbar>.top-actions{
+    grid-column:1!important;grid-row:2!important;
+    display:grid!important;
+    grid-template-columns:max-content minmax(0,1fr) max-content!important;
+    align-items:center!important;
+    width:100%!important;min-width:0!important;
+    gap:8px!important;
+  }
+  header.topbar .top-actions #backBtn,
+  header.topbar .top-actions #logoutBtn{
+    display:block;
+    width:auto!important;min-width:0!important;max-width:none!important;
+    height:42px!important;min-height:42px!important;
+    padding:0 11px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    word-break:keep-all!important;
+    font-size:13px!important;
+    flex:none!important;
+  }
+  header.topbar .top-actions .status{
+    display:block!important;width:100%!important;min-width:0!important;
+    max-width:none!important;margin:0!important;
+    text-align:center!important;font-size:10px!important;
+    line-height:1.25!important;overflow-wrap:anywhere!important;
+  }
+  main{width:100%!important;max-width:100%!important;min-width:0!important}
+  #appView,#developerView,#developerWorkspaceView{width:100%;min-width:0}
+}
+@media(max-width:390px){
+  header.topbar{padding-left:11px!important;padding-right:11px!important}
+  header.topbar .top-actions{gap:6px!important}
+  header.topbar .top-actions #backBtn,
+  header.topbar .top-actions #logoutBtn{padding:0 9px!important;font-size:12px!important}
+}
