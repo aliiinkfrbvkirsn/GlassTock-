@@ -115,6 +115,11 @@ async function renderDeveloperDashboard(){
  $("platformMemberCount").textContent=members.length;
  $("platformItemCount").textContent=stock.length;
  $("platformStockCount").textContent=stock.reduce((sum,row)=>sum+Number(row.quantity||0),0);
+ $("platformMembersList").innerHTML=members.map(m=>{
+  const ws=workspaces.find(x=>x.id===m.workspace_id);
+  const role=m.role==="owner"?"Владелец":m.role==="manager"?"Менеджер":"Сотрудник";
+  return '<div class="team-row"><div><b>'+esc(m.user_id.slice(0,8))+'…</b><small>'+esc(ws?.name||"Компания")+' · '+role+'</small></div><button class="mini" data-open-member-workspace="'+m.workspace_id+'">Открыть</button></div>';
+ }).join("")||'<p class="muted">Участников пока нет.</p>';
  $("platformWorkspaceList").innerHTML=workspaces.map(ws=>{
   const team=members.filter(x=>x.workspace_id===ws.id),owner=team.find(x=>x.role==="owner");
   const products=stock.filter(x=>x.workspace_id===ws.id);
@@ -128,6 +133,12 @@ $("openMyWorkspaceBtn").addEventListener("click",async()=>{
  history.pushState({glassstockNav:"page",page:"myWorkspace"},"","#my-workspace");showView("appView");await refresh();
 });
 $("refreshPlatformBtn").addEventListener("click",renderDeveloperDashboard);
+$("platformMembersCard").addEventListener("click",()=>openDialog("platformMembersDialog"));
+$("platformMembersCard").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openDialog("platformMembersDialog");}});
+$("platformMembersList").addEventListener("click",e=>{
+ const btn=e.target.closest("[data-open-member-workspace]");
+ if(btn){$("platformMembersDialog").close();openDeveloperWorkspace(btn.dataset.openMemberWorkspace);}
+});
 $("platformWorkspaceList").addEventListener("click",e=>{
  const button=e.target.closest("[data-open-workspace]");
  if(button)openDeveloperWorkspace(button.dataset.openWorkspace);
