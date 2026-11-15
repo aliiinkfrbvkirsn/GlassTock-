@@ -82,7 +82,7 @@ function render(){
  const purchaseValue=items.reduce((n,x)=>n+x.quantity*Number(x.purchase_price||0),0);
  const saleValue=items.reduce((n,x)=>n+x.quantity*Number(x.sale_price||0),0);
  const cutoff=Date.now()-30*24*60*60*1000;
- const recentSales=movements.filter(m=>m.movement_type==="out"&&new Date(m.created_at).getTime()>=cutoff);
+ const recentSales=movements.filter(m=>m.movement_type==="out"&&m.unit_price!==null&&m.unit_cost!==null&&new Date(m.created_at).getTime()>=cutoff);
  const revenue=recentSales.reduce((n,m)=>n+Number(m.unit_price||0)*m.quantity,0);
  const profit=recentSales.reduce((n,m)=>n+(Number(m.unit_price||0)-Number(m.unit_cost||0))*m.quantity,0);
  $("statItems").textContent=items.length;$("statQty").textContent=total;$("statLow").textContent=low;
