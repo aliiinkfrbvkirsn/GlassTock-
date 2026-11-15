@@ -234,3 +234,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 .notification-read-label{flex:0 0 auto;color:#7e9b99;font-size:10px;padding-top:8px}
 .notification-empty{text-align:center;padding:24px 10px}
 @media(max-width:560px){.notification-item{gap:8px;padding:10px}.notification-icon{flex-basis:31px;height:31px}.notification-read-btn{padding:7px;font-size:9px}.welcome-actions #notificationsBtn{flex:1 1 100%}}
+
+.top-notifications{position:relative;display:inline-grid;place-items:center;width:42px;height:42px;padding:0;border:1px solid #34465d;border-radius:13px;background:#1a2b40;color:#eaf0f8;font-size:20px;flex:0 0 auto}
+.top-notifications .notification-count{position:absolute;top:-6px;right:-6px}
+@media(max-width:560px){.topbar{padding-left:16px;padding-right:16px}.top-actions{gap:8px}.top-notifications{width:38px;height:38px}}
