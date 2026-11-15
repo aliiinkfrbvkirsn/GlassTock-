@@ -5,7 +5,42 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
 let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[];
 const views=["authView","setupView","appView","developerView","developerWorkspaceView"];
-function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView");}
+let closingFromPopState=false;
+function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView");syncBackButton();}
+function syncBackButton(){
+ const hasDialog=Array.from(document.querySelectorAll("dialog")).some(d=>d.open);
+ const hasDetail=!$("developerWorkspaceView").classList.contains("hidden");
+ const hasWorkspacePage=history.state?.glassstockNav==="page";
+ $("backBtn").classList.toggle("hidden",!(hasDialog||hasDetail||hasWorkspacePage));
+}
+function openDialog(id){
+ const dialog=$(id);if(!dialog||dialog.open)return;
+ history.pushState({glassstockNav:"dialog",dialogId:id},"","#"+id);
+ dialog.showModal();syncBackButton();
+}
+document.querySelectorAll("dialog").forEach(dialog=>dialog.addEventListener("close",()=>{
+ if(!closingFromPopState&&history.state?.glassstockNav==="dialog"&&history.state.dialogId===dialog.id)history.back();
+ syncBackButton();
+}));
+window.addEventListener("popstate",()=>{
+ const openDialogs=Array.from(document.querySelectorAll("dialog[open]"));
+ if(openDialogs.length){
+  closingFromPopState=true;openDialogs[openDialogs.length-1].close();closingFromPopState=false;syncBackButton();return;
+ }
+ if(!$("developerWorkspaceView").classList.contains("hidden")){
+  showView("developerView");return;
+ }
+ if(history.state?.glassstockNav==="page"||!$("developerView").classList.contains("hidden")===false&&isPlatformAdmin){
+  if(isPlatformAdmin)showView("developerView");
+ }
+ syncBackButton();
+});
+$("backBtn").addEventListener("click",()=>{
+ if(history.state?.glassstockNav==="dialog"||history.state?.glassstockNav==="page"){history.back();return;}
+ const openDialogs=Array.from(document.querySelectorAll("dialog[open]"));
+ if(openDialogs.length)openDialogs[openDialogs.length-1].close();
+ else if(!$("developerWorkspaceView").classList.contains("hidden"))showView("developerView");
+});
 function msg(id,text,ok=false){const el=$(id);el.textContent=text;el.classList.toggle("success",ok);}
 function toast(text){const el=$("toast");el.textContent=text;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2600);}
 function setConnection(text,kind=""){const el=$("connection");el.textContent="● "+text;el.className="status "+kind;}
@@ -83,7 +118,7 @@ async function renderDeveloperDashboard(){
 }
 $("openMyWorkspaceBtn").addEventListener("click",async()=>{
  if(!workspace){toast("У этого аккаунта пока нет собственного склада");return;}
- showView("appView");await refresh();
+ history.pushState({glassstockNav:"page",page:"myWorkspace"},"","#my-workspace");showView("appView");await refresh();
 });
 $("refreshPlatformBtn").addEventListener("click",renderDeveloperDashboard);
 $("platformWorkspaceList").addEventListener("click",e=>{
@@ -112,7 +147,7 @@ async function openDeveloperWorkspace(id){
   const label=m.movement_type==="in"?"Приход":m.movement_type==="out"?"Расход":"Коррекция";
   return '<div class="history-item"><div><b>'+esc(m.inventory?.make||"Товар")+' '+esc(m.inventory?.model||"")+'</b><small>'+new Date(m.created_at).toLocaleString("ru-RU")+' · '+esc(m.note||"Без комментария")+'</small></div><div class="history-type '+m.movement_type+'">'+label+': '+m.quantity+'</div></div>';
  }).join("")||'<p class="muted">Операций пока нет.</p>';
- showView("developerWorkspaceView");
+ history.pushState({glassstockNav:"page",page:"developerWorkspace"},"","#company-"+encodeURIComponent(id));showView("developerWorkspaceView");
 }
 
 $("createWorkspaceBtn").addEventListener("click",async()=>{
@@ -183,12 +218,12 @@ function openItem(item=null){
  $("make").value=item?.make||"";$("model").value=item?.model||"";$("year").value=item?.year||"";$("partNumber").value=item?.part_number||"";
  $("glassType").value=item?.glass_type||"";$("location").value=item?.location||"";$("quantity").value=item?.quantity??0;$("minQuantity").value=item?.min_quantity??0;
  $("purchasePrice").value=item?.purchase_price??0;$("salePrice").value=item?.sale_price??0;$("supplier").value=item?.supplier||"";$("notes").value=item?.notes||"";
- msg("itemMessage","");$("itemDialog").showModal();
+ msg("itemMessage","");openDialog("itemDialog");
 }
 $("inventoryBody").addEventListener("click",async e=>{
  const edit=e.target.closest("[data-edit]"),move=e.target.closest("[data-move]"),del=e.target.closest("[data-delete]");
  if(edit){openItem(items.find(x=>x.id===edit.dataset.edit));}
- if(move){const x=items.find(x=>x.id===move.dataset.move);$("movementForm").reset();$("movementItemId").value=x.id;$("movementItemName").textContent=x.make+" "+x.model+" · остаток "+x.quantity;setMovementPrice(x);$("movementDialog").showModal();}
+ if(move){const x=items.find(x=>x.id===move.dataset.move);$("movementForm").reset();$("movementItemId").value=x.id;$("movementItemName").textContent=x.make+" "+x.model+" · остаток "+x.quantity;setMovementPrice(x);openDialog("movementDialog");}
  if(del){const x=items.find(x=>x.id===del.dataset.delete);if(!confirm("Удалить "+x.make+" "+x.model+"?"))return;const {error}=await db.from("inventory").delete().eq("id",x.id);if(error)toast(error.message);else{toast("Позиция удалена");await refresh();}}
 });
 $("itemForm").addEventListener("submit",async e=>{
@@ -210,14 +245,14 @@ $("movementForm").addEventListener("submit",async e=>{
  if(error){msg("movementMessage",error.message);return;}
  $("movementDialog").close();toast("Операция записана");await refresh();
 });
-$("teamBtn").addEventListener("click",async()=>{await refresh();$("teamDialog").showModal();});
+$("teamBtn").addEventListener("click",async()=>{await refresh();openDialog("teamDialog");});
 $("teamList").addEventListener("click",async e=>{
  const btn=e.target.closest("[data-save-role]");if(!btn)return;
  const userId=btn.dataset.saveRole,select=$("teamList").querySelector('[data-role-user="'+userId+'"]');
  btn.disabled=true;const {error}=await db.rpc("set_workspace_member_role",{p_user_id:userId,p_role:select.value});btn.disabled=false;
  if(error){toast(error.message);return;}toast("Роль сотрудника обновлена");await refresh();
 });
-$("inviteBtn").addEventListener("click",()=>{$("inviteCodeDisplay").textContent=workspace.join_code;$("inviteDialog").showModal();});
+$("inviteBtn").addEventListener("click",()=>{$("inviteCodeDisplay").textContent=workspace.join_code;openDialog("inviteDialog");});
 $("copyInviteBtn").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(workspace.join_code);toast("Код скопирован");}catch{toast("Код: "+workspace.join_code);}});
 $("exportBtn").addEventListener("click",()=>{
  const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),workspace:workspace.name,items,movements},null,2)],{type:"application/json"});
