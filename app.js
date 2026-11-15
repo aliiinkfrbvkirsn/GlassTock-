@@ -99,7 +99,7 @@ function render(){
   return '<tr><td><strong>'+esc(x.make)+' '+esc(x.model)+'</strong><small>'+esc(x.year||"")+'</small></td>'+
    '<td>'+esc(x.part_number||"—")+'</td><td>'+esc(x.glass_type||"—")+'</td>'+
    '<td class="qty '+(x.quantity<=x.min_quantity?"low":"good")+'">'+x.quantity+' <small>/ мин. '+x.min_quantity+'</small></td>'+
-   '<td>'+money(x.purchase_price)+' сом</td><td>'+money(x.sale_price)+' сом</td><td>'+esc(x.supplier||"—")+'</td><td>'+esc(x.location||"—")+'</td><td><div class="row-actions">'+actions+'</div></td></tr>';
+   '<td>'+money(x.purchase_price)+' сом</td><td>'+money(x.sale_price)+' сом</td><td class="'+(Number(x.sale_price||0)-Number(x.purchase_price||0)>=0?"good":"low")+'">'+money(Number(x.sale_price||0)-Number(x.purchase_price||0))+' сом</td><td>'+esc(x.supplier||"—")+'</td><td>'+esc(x.location||"—")+'</td><td><div class="row-actions">'+actions+'</div></td></tr>';
  }).join("");
  $("emptyState").classList.toggle("hidden",filtered.length>0);
  renderTeam();
