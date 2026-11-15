@@ -145,7 +145,7 @@ async function routeUser(){
  $("inviteBtn").classList.toggle("hidden",member.role!=="owner");
  $("addBtn").classList.toggle("hidden",member.role==="staff");
  if(isPlatformAdmin){showView("developerView");setConnection("Разработчик · облако подключено","ok");await renderDeveloperDashboard();}
- else{showView("appView");setConnection("Облако подключено","ok");await refresh();await loadNotifications();startNotificationsRealtime();}
+ else{showView("appView");setConnection("Облако подключено","ok");await refresh();startNotificationsRealtime();await loadNotifications();}
 }
 async function renderDeveloperDashboard(){
  msg("platformMessage","Загружаю организации…");
