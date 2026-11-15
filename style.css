@@ -238,3 +238,20 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 .top-notifications{position:relative;display:inline-grid;place-items:center;width:42px;height:42px;padding:0;border:1px solid #34465d;border-radius:13px;background:#1a2b40;color:#eaf0f8;font-size:20px;flex:0 0 auto}
 .top-notifications .notification-count{position:absolute;top:-6px;right:-6px}
 @media(max-width:560px){.topbar{padding-left:16px;padding-right:16px}.top-actions{gap:8px}.top-notifications{width:38px;height:38px}}
+
+
+/* Mobile header layout: back left, bell centered, logout right, status below */
+@media(max-width:700px){
+  header.topbar>.top-actions{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr)!important;
+    grid-template-rows:42px auto!important;
+    align-items:center!important;
+    justify-items:stretch!important;
+    row-gap:7px!important;
+  }
+  header.topbar .top-actions #backBtn{grid-column:1!important;grid-row:1!important;justify-self:start!important}
+  header.topbar .top-actions #notificationsBtn{grid-column:2!important;grid-row:1!important;justify-self:center!important;width:42px!important;height:42px!important}
+  header.topbar .top-actions #logoutBtn{grid-column:3!important;grid-row:1!important;justify-self:end!important}
+  header.topbar .top-actions .status{grid-column:1/-1!important;grid-row:2!important;justify-self:center!important;text-align:center!important;width:100%!important;max-width:100%!important}
+}
