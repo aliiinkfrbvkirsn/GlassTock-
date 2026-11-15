@@ -299,9 +299,14 @@ $("inventoryBody").addEventListener("click",async e=>{
 });
 $("itemForm").addEventListener("submit",async e=>{
  e.preventDefault();const id=$("itemId").value;
- const row={workspace_id:workspace.id,make:$("make").value.trim(),model:$("model").value.trim(),year:$("year").value.trim()||null,part_number:$("partNumber").value.trim()||null,glass_type:$("glassType").value.trim()||null,location:$("location").value.trim()||null,quantity:Number($("quantity").value),min_quantity:Number($("minQuantity").value),purchase_price:Number($("purchasePrice").value||0),sale_price:Number($("salePrice").value||0),supplier:$("supplier").value.trim()||null,notes:$("notes").value.trim()||null};
- const result=id?await db.from("inventory").update(row).eq("id",id):await db.from("inventory").insert(row);
+ const requestedQuantity=Number($("quantity").value);
+ const row={workspace_id:workspace.id,make:$("make").value.trim(),model:$("model").value.trim(),year:$("year").value.trim()||null,part_number:$("partNumber").value.trim()||null,glass_type:$("glassType").value.trim()||null,location:$("location").value.trim()||null,quantity:id?requestedQuantity:0,min_quantity:Number($("minQuantity").value),purchase_price:Number($("purchasePrice").value||0),sale_price:Number($("salePrice").value||0),supplier:$("supplier").value.trim()||null,notes:$("notes").value.trim()||null};
+ const result=id?await db.from("inventory").update(row).eq("id",id):await db.from("inventory").insert(row).select("id").single();
  if(result.error){msg("itemMessage",result.error.message);return;}
+ if(!id&&requestedQuantity>0){
+  const {error:movementError}=await db.rpc("record_stock_movement",{p_inventory_id:result.data.id,p_movement_type:"in",p_quantity:requestedQuantity,p_note:"Начальное пополнение при создании позиции",p_unit_price:Number($("purchasePrice").value||0)});
+  if(movementError){msg("itemMessage","Позиция создана, но начальное пополнение не записалось: "+movementError.message);await refresh();return;}
+ }
  $("itemDialog").close();toast("Сохранено");await refresh();
 });
 function setMovementPrice(item){
