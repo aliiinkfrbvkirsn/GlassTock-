@@ -262,7 +262,7 @@ async function openDeveloperWorkspace(id){
   $("devProductsCount").textContent=products.length;
   $("devQuantityCount").textContent=products.reduce((sum,x)=>sum+Number(x.quantity||0),0);
   $("devTeamList").innerHTML=members.map(m=>{
-   const label=m.role==="owner"?"Владелец":m.role==="manager"?"Менеджер":"Сотрудник";
+   const label=m.role==="owner"?"Владелец":"Сотрудник";
    const who=m.user_id===currentUser.id?"Ты":m.user_id.slice(0,8)+"…";
    const remove=m.role==="owner"?"":'<button class="mini member-remove" data-dev-remove="'+m.user_id+'">Удалить</button>';
    return '<div class="team-row"><div><b>'+esc(who)+'</b><small>'+label+'</small></div>'+remove+'</div>';
