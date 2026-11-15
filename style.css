@@ -205,3 +205,5 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
   header.topbar .top-actions #backBtn,
   header.topbar .top-actions #logoutBtn{padding:0 9px!important;font-size:12px!important}
 }
+
+.owner-entry{padding:16px;border:1px solid #3b6a70;border-radius:16px;background:linear-gradient(135deg,#183344,#142638);margin:18px 0 12px}.owner-entry b{display:block;font-size:16px;color:#eaf8f6}.owner-entry p{margin:6px 0 10px}.owner-entry .full{margin-top:4px}
