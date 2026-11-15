@@ -30,8 +30,8 @@ window.addEventListener("popstate",()=>{
  if(!$("developerWorkspaceView").classList.contains("hidden")){
   showView("developerView");return;
  }
- if(history.state?.glassstockNav==="page"||!$("developerView").classList.contains("hidden")===false&&isPlatformAdmin){
-  if(isPlatformAdmin)showView("developerView");
+ if(isPlatformAdmin && !$("developerView").classList.contains("hidden")){
+  showView("developerView");
  }
  syncBackButton();
 });
