@@ -119,6 +119,8 @@ $("authForm").addEventListener("submit",async e=>{
  currentUser=result.data.user;await routeUser();
 });
 $("logoutBtn").addEventListener("click",async()=>{if(!confirm("Вы точно хотите выйти из аккаунта?"))return;await db.auth.signOut();});
+ $("scrollTopBtn").addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
+ $("scrollBottomBtn").addEventListener("click",()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:"smooth"}));
 $("ownerLoginBtn").addEventListener("click",async()=>{setTab("login");$("password").value="";msg("authMessage","");await db.auth.signOut();showView("authView");setConnection("Вход для владельца");});
 
 async function routeUser(){
