@@ -210,3 +210,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 
 /* Participant controls */
 .stat-clickable{cursor:pointer;transition:border-color .18s,transform .18s}.stat-clickable:hover,.stat-clickable:focus-visible{border-color:#55d7c2;outline:none;transform:translateY(-2px)}.member-remove{background:#512b38;color:#ffd9df;border:1px solid #78404d}.member-remove:disabled{opacity:.55;cursor:wait}
+
+/* Personal activity history */
+.personal-history-dialog{max-width:720px}.personal-history-stats{grid-template-columns:repeat(3,minmax(0,1fr));margin:14px 0}.history-filters{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.history-filters button.active{border-color:#55d7c2;background:#173b42;color:#c7fff4}.history-type.adjust{color:#d9c5ff}
+@media(max-width:560px){.personal-history-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.history-filters button{flex:1 1 30%;padding:10px 8px;font-size:13px}}
