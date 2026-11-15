@@ -143,7 +143,7 @@ async function routeUser(){
  const {data:ws,error:wsErr}=await db.from("workspaces").select("id,name,join_code").eq("id",member.workspace_id).single();
  if(wsErr){showView("setupView");msg("setupMessage",wsErr.message);return;}
  workspace=ws;$("workspaceTitle").textContent=ws.name;$("notificationsBtn").classList.toggle("hidden",isPlatformAdmin);
- $("userLabel").textContent=currentUser.email+" · "+({owner:"Владелец",manager:"Менеджер",staff:"Сотрудник"}[member.role]||"Сотрудник");
+ $("userLabel").textContent=currentUser.email+" · "+({owner:"Владелец",staff:"Сотрудник"}[member.role]||"Сотрудник");
  $("teamBtn").classList.toggle("hidden",member.role!=="owner");
  $("inviteBtn").classList.toggle("hidden",member.role!=="owner");
  $("addBtn").classList.toggle("hidden",member.role==="staff");
@@ -167,7 +167,7 @@ async function renderDeveloperDashboard(){
  $("platformStockCount").textContent=stock.reduce((sum,row)=>sum+Number(row.quantity||0),0);
  $("platformMembersList").innerHTML=members.map(m=>{
   const ws=workspaces.find(x=>x.id===m.workspace_id);
-  const role=m.role==="owner"?"Владелец":m.role==="manager"?"Менеджер":"Сотрудник";
+  const role=m.role==="owner"?"Владелец":"Сотрудник";
   return '<div class="team-row"><div><b>'+esc(m.user_id.slice(0,8))+'…</b><small>'+esc(ws?.name||"Компания")+' · '+role+'</small></div><button class="mini" data-open-member-workspace="'+m.workspace_id+'">Открыть</button></div>';
  }).join("")||'<p class="muted">Участников пока нет.</p>';
  $("platformWorkspaceList").innerHTML=workspaces.map(ws=>{
@@ -319,7 +319,7 @@ function renderTeam(){
  $("teamList").innerHTML=teamMembers.map(m=>{
   const who=m.user_id===currentUser.id?"Ты":esc(m.user_id.slice(0,8)+"…");
   if(m.role==="owner")return '<div class="team-row"><div><b>'+who+'</b><small>Владелец</small></div></div>';
-  return '<div class="team-row"><div><b>'+who+'</b><small>'+new Date(m.created_at).toLocaleDateString("ru-RU")+'</small></div><div class="team-controls"><select data-role-user="'+m.user_id+'"><option value="staff" '+(m.role==="staff"?"selected":"")+'>Сотрудник</option><option value="manager" '+(m.role==="manager"?"selected":"")+'>Менеджер</option></select><button class="mini" data-save-role="'+m.user_id+'">Сохранить</button><button class="mini member-remove" data-owner-remove="'+m.user_id+'">Удалить</button></div></div>';
+  return '<div class="team-row"><div><b>'+who+'</b><small>Сотрудник · '+new Date(m.created_at).toLocaleDateString("ru-RU")+'</small></div><div class="team-controls"><button class="mini member-remove" data-owner-remove="'+m.user_id+'">Удалить</button></div></div>';
  }).join("")||'<p class="muted">Пока только владелец.</p>';
 }
 function render(){
