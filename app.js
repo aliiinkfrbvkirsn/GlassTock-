@@ -5,6 +5,52 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
 let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[],activeDeveloperWorkspaceId=null,myHistoryRows=[],myHistoryFilter="all";
 const views=["authView","setupView","appView","developerView","developerWorkspaceView"];
+let notifications=[],notificationChannel=null;
+function stopNotificationsRealtime(){
+ if(notificationChannel){db.removeChannel(notificationChannel);notificationChannel=null;}
+}
+function renderNotifications(){
+ const unread=notifications.filter(n=>!n.is_read).length;
+ $("notificationsCount").textContent=unread>99?"99+":String(unread);
+ $("notificationsCount").classList.toggle("hidden",unread===0);
+ $("notificationsBtn").setAttribute("aria-label",unread?"Уведомления, непрочитанных: "+unread:"Уведомления");
+ const icons={stock_in:"📦",stock_out:"↘️",stock_adjust:"🧮",low_stock:"⚠️",member_joined:"👤",member_removed:"🚪",member_role_changed:"🛡️"};
+ $("notificationsList").innerHTML=notifications.length?notifications.map(n=>{
+  const icon=icons[n.type]||"🔔";
+  const date=new Date(n.created_at).toLocaleString("ru-RU");
+  return '<article class="notification-item '+(n.is_read?"":"unread")+'"><span class="notification-icon">'+icon+'</span><div class="notification-content"><b>'+esc(n.title)+'</b><p>'+esc(n.body)+'</p><small>'+esc(date)+'</small></div>'+(n.is_read?'<span class="notification-read-label">Прочитано</span>':'<button class="mini notification-read-btn" data-notification-read="'+n.id+'">Прочитано</button>')+'</article>';
+ }).join(""):'<p class="muted notification-empty">Пока уведомлений нет.</p>';
+ $("markAllNotificationsReadBtn").disabled=unread===0;
+}
+async function loadNotifications(){
+ if(!workspace||!currentUser)return;
+ $("notificationsMessage").textContent="Загружаю уведомления…";
+ const {data,error}=await db.from("notifications").select("id,workspace_id,user_id,type,title,body,is_read,created_at").eq("workspace_id",workspace.id).eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);
+ if(error){$("notificationsMessage").textContent="Не удалось загрузить уведомления: "+error.message;return;}
+ notifications=data||[];
+ $("notificationsMessage").textContent=notifications.length?"Показаны последние 100 уведомлений.":"";
+ renderNotifications();
+}
+function startNotificationsRealtime(){
+ stopNotificationsRealtime();
+ if(!workspace||!currentUser)return;
+ notificationChannel=db.channel("glassstock-notifications-"+currentUser.id)
+  .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:"user_id=eq."+currentUser.id},payload=>{
+   const row=payload.new;
+   if(row.workspace_id!==workspace?.id||notifications.some(n=>n.id===row.id))return;
+   notifications.unshift(row);
+   notifications=notifications.slice(0,100);
+   renderNotifications();
+   toast("Новое уведомление: "+row.title);
+  })
+  .subscribe();
+}
+async function markNotificationRead(id){
+ const {error}=await db.from("notifications").update({is_read:true}).eq("id",id).eq("user_id",currentUser.id);
+ if(error){toast("Не удалось отметить: "+error.message);return;}
+ notifications=notifications.map(n=>n.id===id?{...n,is_read:true}:n);
+ renderNotifications();
+}
 let closingFromPopState=false;
 function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView");syncBackButton();}
 function syncBackButton(){
@@ -61,7 +107,7 @@ async function init(){
  const {data:{session},error}=await db.auth.getSession();
  if(error){setConnection("Ошибка","bad");return;}
  if(session){currentUser=session.user;await routeUser();}else{showView("authView");setConnection("Не выполнен вход");}
- db.auth.onAuthStateChange((_event,session)=>{setTimeout(async()=>{currentUser=session?.user||null;if(currentUser)await routeUser();else{workspace=null;showView("authView");setConnection("Не выполнен вход");}},0);});
+ db.auth.onAuthStateChange((_event,session)=>{setTimeout(async()=>{currentUser=session?.user||null;if(currentUser)await routeUser();else{stopNotificationsRealtime();notifications=[];renderNotifications();workspace=null;showView("authView");setConnection("Не выполнен вход");}},0);});
 }
 $("authForm").addEventListener("submit",async e=>{
  e.preventDefault();msg("authMessage","");$("authSubmit").disabled=true;
@@ -76,6 +122,7 @@ $("logoutBtn").addEventListener("click",async()=>{await db.auth.signOut();});
 $("ownerLoginBtn").addEventListener("click",async()=>{setTab("login");$("password").value="";msg("authMessage","");await db.auth.signOut();showView("authView");setConnection("Вход для владельца");});
 
 async function routeUser(){
+ stopNotificationsRealtime();notifications=[];renderNotifications();
  setConnection("Загрузка…");
  const adminResult=await db.rpc("is_platform_admin");
  isPlatformAdmin=!adminResult.error&&adminResult.data===true;
@@ -92,13 +139,13 @@ async function routeUser(){
  membership=member;
  const {data:ws,error:wsErr}=await db.from("workspaces").select("id,name,join_code").eq("id",member.workspace_id).single();
  if(wsErr){showView("setupView");msg("setupMessage",wsErr.message);return;}
- workspace=ws;$("workspaceTitle").textContent=ws.name;
+ workspace=ws;$("workspaceTitle").textContent=ws.name;$("notificationsBtn").classList.toggle("hidden",isPlatformAdmin);
  $("userLabel").textContent=currentUser.email+" · "+({owner:"Владелец",manager:"Менеджер",staff:"Сотрудник"}[member.role]||"Сотрудник");
  $("teamBtn").classList.toggle("hidden",member.role!=="owner");
  $("inviteBtn").classList.toggle("hidden",member.role!=="owner");
  $("addBtn").classList.toggle("hidden",member.role==="staff");
  if(isPlatformAdmin){showView("developerView");setConnection("Разработчик · облако подключено","ok");await renderDeveloperDashboard();}
- else{showView("appView");setConnection("Облако подключено","ok");await refresh();}
+ else{showView("appView");setConnection("Облако подключено","ok");await refresh();await loadNotifications();startNotificationsRealtime();}
 }
 async function renderDeveloperDashboard(){
  msg("platformMessage","Загружаю организации…");
@@ -160,6 +207,21 @@ $("myHistoryDialog").addEventListener("click",e=>{
  const btn=e.target.closest("[data-my-history-filter]");
  if(!btn)return;
  myHistoryFilter=btn.dataset.myHistoryFilter;renderMyHistory();
+});
+$("notificationsBtn").addEventListener("click",async()=>{
+ openDialog("notificationsDialog");
+ await loadNotifications();
+});
+$("notificationsList").addEventListener("click",async e=>{
+ const btn=e.target.closest("[data-notification-read]");
+ if(btn)await markNotificationRead(btn.dataset.notificationRead);
+});
+$("markAllNotificationsReadBtn").addEventListener("click",async()=>{
+ if(!workspace||!currentUser)return;
+ const {error}=await db.from("notifications").update({is_read:true}).eq("workspace_id",workspace.id).eq("user_id",currentUser.id).eq("is_read",false);
+ if(error){toast("Не удалось отметить уведомления: "+error.message);return;}
+ notifications=notifications.map(n=>({...n,is_read:true}));
+ renderNotifications();
 });
 $("openMyWorkspaceBtn").addEventListener("click",async()=>{
  if(!workspace){toast("У этого аккаунта пока нет собственного склада");return;}
