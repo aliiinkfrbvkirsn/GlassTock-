@@ -54,6 +54,21 @@
       <div id="platformWorkspaceList" class="history-list"></div>
       <p id="platformMessage" class="message" aria-live="polite"></p>
     </section>
+    <section id="developerWorkspaceView" class="hidden">
+      <div class="welcome-row">
+        <div><div class="eyebrow">ПРОСМОТР КОМПАНИИ</div><h1 id="devWorkspaceTitle">Склад</h1><p class="muted">Режим разработчика · только просмотр данных этой компании.</p></div>
+        <button id="backToDeveloperBtn" class="secondary">← Все компании</button>
+      </div>
+      <div class="stats">
+        <article class="stat"><span>Участников</span><b id="devMembersCount">0</b></article>
+        <article class="stat"><span>Позиций</span><b id="devProductsCount">0</b></article>
+        <article class="stat"><span>Всего стёкол</span><b id="devQuantityCount">0</b></article>
+      </div>
+      <div class="section-head"><div><div class="eyebrow">ТОВАРНЫЙ СПИСОК</div><h2>Остатки</h2></div></div>
+      <div class="table-wrap"><table><thead><tr><th>Марка / модель</th><th>Артикул</th><th>Тип</th><th>Количество</th><th>Закупка</th><th>Продажа</th><th>Поставщик</th><th>Место</th></tr></thead><tbody id="devInventoryBody"></tbody></table></div>
+      <div class="section-head"><div><div class="eyebrow">ПОСЛЕДНИЕ ДЕЙСТВИЯ</div><h2>История операций</h2></div></div>
+      <div id="devMovementList" class="history-list"></div>
+    </section>
   </main>
   <dialog id="itemDialog"><form id="itemForm" method="dialog" class="dialog-form">
     <div class="dialog-head"><h2 id="itemDialogTitle">Новая позиция</h2><button type="button" class="close" data-close="itemDialog">×</button></div>
