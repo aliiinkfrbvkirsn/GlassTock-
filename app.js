@@ -225,10 +225,15 @@ $("markAllNotificationsReadBtn").addEventListener("click",async()=>{
  renderNotifications();
 });
 $("openMyWorkspaceBtn").addEventListener("click",async()=>{
- if(!workspace){toast("У этого аккаунта пока нет собственного склада");return;}
- history.pushState({glassstockNav:"page",page:"myWorkspace"},"","#my-workspace");showView("appView");await refresh();
-});
-$("refreshPlatformBtn").addEventListener("click",renderDeveloperDashboard);
+  if(!workspace){toast("У этого аккаунта пока нет собственного склада");return;}
+  history.pushState({glassstockNav:"page",page:"myWorkspace"},"","#my-workspace");
+  showView("appView");
+  $("notificationsBtn").classList.remove("hidden");
+  await refresh();
+  startNotificationsRealtime();
+  await loadNotifications();
+ });
+ $("refreshPlatformBtn").addEventListener("click",renderDeveloperDashboard);
 $("platformMembersCard").addEventListener("click",()=>openDialog("platformMembersDialog"));
 $("platformMembersCard").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openDialog("platformMembersDialog");}});
 $("platformMembersList").addEventListener("click",e=>{
