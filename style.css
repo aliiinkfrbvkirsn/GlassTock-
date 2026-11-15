@@ -207,3 +207,6 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 }
 
 .owner-entry{padding:16px;border:1px solid #3b6a70;border-radius:16px;background:linear-gradient(135deg,#183344,#142638);margin:18px 0 12px}.owner-entry b{display:block;font-size:16px;color:#eaf8f6}.owner-entry p{margin:6px 0 10px}.owner-entry .full{margin-top:4px}
+
+/* Participant controls */
+.stat-clickable{cursor:pointer;transition:border-color .18s,transform .18s}.stat-clickable:hover,.stat-clickable:focus-visible{border-color:#55d7c2;outline:none;transform:translateY(-2px)}.member-remove{background:#512b38;color:#ffd9df;border:1px solid #78404d}.member-remove:disabled{opacity:.55;cursor:wait}
