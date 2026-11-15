@@ -25,8 +25,10 @@
       <button class="primary full" id="authSubmit">Войти</button></form><p id="authMessage" class="message" aria-live="polite"></p>
     </div></section>
     <section id="setupView" class="auth-wrap hidden"><div class="auth-card">
-      <div class="eyebrow">ПОДКЛЮЧЕНИЕ К КОМАНДЕ</div><h1>Введи код<br><span>своего склада.</span></h1>
-      <p class="muted">Если ты сотрудник, попроси у владельца код приглашения и введи его ниже. <b>Не нажимай «Создать мой склад»</b> — эта кнопка нужна только владельцу новой компании.</p>
+      <div class="eyebrow">ВХОД В GLASSSTOCK</div><h1>Выбери способ<br><span>подключения.</span></h1>
+      <div class="owner-entry"><div><b>Вход для владельца</b><p class="muted">Уже создавал свой склад? Войди в аккаунт владельца, чтобы открыть свою компанию.</p></div><button id="ownerLoginBtn" class="secondary full" type="button">Войти как владелец</button></div>
+      <div class="separator">Или присоединиться к чужому складу</div>
+      <p class="muted">Если ты сотрудник, попроси у владельца код приглашения и введи его ниже.</p>
       <label>Код приглашения<input id="joinCode" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Введи код от владельца"></label>
       <button id="joinWorkspaceBtn" class="primary full">Присоединиться к складу</button><div class="separator">Ты владелец и создаёшь новую компанию?</div>
       <label>Название нового склада<input id="workspaceName" value="GlassStock" maxlength="60"></label>
