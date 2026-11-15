@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="GlassStock — общий учёт стекла на складе">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <title>GlassStock — склад стекла</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">G</span><div><b>GlassStock</b><small>УЧЁТ СТЁКОЛ</small></div></div>
+    <div class="top-actions"><span id="connection" class="status">● Подключение</span><button id="logoutBtn" class="ghost hidden">Выйти</button></div>
+  </header>
+  <main>
+    <section id="authView" class="auth-wrap"><div class="auth-card">
+      <div class="eyebrow">ОБЛАЧНЫЙ СКЛАД</div><h1>Весь склад<br><span>в одном месте.</span></h1>
+      <p class="muted">Войди в аккаунт или создай первый аккаунт владельца склада.</p>
+      <div class="tabs"><button class="tab active" data-tab="login">Вход</button><button class="tab" data-tab="signup">Регистрация</button></div>
+      <form id="authForm"><label>Email<input id="email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
+      <label>Пароль<input id="password" type="password" autocomplete="current-password" minlength="6" required placeholder="Минимум 6 символов"></label>
+      <button class="primary full" id="authSubmit">Войти</button></form><p id="authMessage" class="message" aria-live="polite"></p>
+    </div></section>
+    <section id="setupView" class="auth-wrap hidden"><div class="auth-card">
+      <div class="eyebrow">ПОСЛЕДНИЙ ШАГ НАСТРОЙКИ</div><h1>Подключи<br><span>свой склад.</span></h1>
+      <p class="muted">Если ты первый сотрудник — создай общий склад. Остальные смогут присоединиться по коду приглашения.</p>
+      <label>Название склада<input id="workspaceName" value="GlassStock" maxlength="60"></label>
+      <button id="createWorkspaceBtn" class="primary full">Создать мой склад</button><div class="separator">или</div>
+      <label>Код приглашения<input id="joinCode" autocapitalize="characters" placeholder="Например, A1B2C3D4E5"></label>
+      <button id="joinWorkspaceBtn" class="secondary full">Присоединиться к складу</button><p id="setupMessage" class="message" aria-live="polite"></p>
+    </div></section>
+    <section id="appView" class="hidden">
+      <div class="welcome-row"><div><div class="eyebrow">ОБЩИЙ СКЛАД</div><h1 id="workspaceTitle">GlassStock</h1><p id="userLabel" class="muted"></p></div><button id="inviteBtn" class="secondary">Код для команды</button></div>
+      <div class="stats"><article class="stat"><span>Позиций</span><b id="statItems">0</b></article><article class="stat"><span>Всего стёкол</span><b id="statQty">0</b></article><article class="stat"><span>Нужно пополнить</span><b id="statLow">0</b></article></div>
+      <div class="toolbar"><input id="search" placeholder="Поиск: марка, модель, артикул…"><select id="filter"><option value="all">Все позиции</option><option value="low">Мало на складе</option><option value="empty">Нет в наличии</option></select><button id="addBtn" class="primary">＋ Добавить стекло</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Марка / модель</th><th>Артикул</th><th>Тип</th><th>Остаток</th><th>Место</th><th></th></tr></thead><tbody id="inventoryBody"></tbody></table><div id="emptyState" class="empty hidden"><b>Пока нет товаров</b><p>Добавь первую позицию, и она появится у всей команды.</p></div></div>
+      <div class="section-head"><div><div class="eyebrow">ПОСЛЕДНИЕ ДЕЙСТВИЯ</div><h2>История склада</h2></div><button id="exportBtn" class="ghost">Экспорт JSON</button></div><div id="historyList" class="history-list"></div>
+    </section>
+  </main>
+  <dialog id="itemDialog"><form id="itemForm" method="dialog" class="dialog-form">
+    <div class="dialog-head"><h2 id="itemDialogTitle">Новая позиция</h2><button type="button" class="close" data-close="itemDialog">×</button></div>
+    <input id="itemId" type="hidden"><label>Марка автомобиля<input id="make" required maxlength="80" placeholder="Toyota"></label><label>Модель<input id="model" required maxlength="100" placeholder="Camry"></label>
+    <div class="two"><label>Год<input id="year" maxlength="30" placeholder="2018–2022"></label><label>Артикул<input id="partNumber" maxlength="100" placeholder="Например, XYG"></label></div>
+    <div class="two"><label>Тип стекла<input id="glassType" maxlength="60" placeholder="Лобовое"></label><label>Место хранения<input id="location" maxlength="80" placeholder="Стеллаж A-1"></label></div>
+    <div class="two"><label>Количество<input id="quantity" type="number" min="0" step="1" required value="0"></label><label>Минимум<input id="minQuantity" type="number" min="0" step="1" value="0"></label></div>
+    <label>Примечание<textarea id="notes" rows="2" maxlength="500"></textarea></label><p id="itemMessage" class="message"></p><button class="primary full" type="submit">Сохранить позицию</button>
+  </form></dialog>
+  <dialog id="movementDialog"><form id="movementForm" method="dialog" class="dialog-form">
+    <div class="dialog-head"><h2>Движение товара</h2><button type="button" class="close" data-close="movementDialog">×</button></div>
+    <input id="movementItemId" type="hidden"><p id="movementItemName" class="muted"></p>
+    <label>Операция<select id="movementType"><option value="in">Приход</option><option value="out">Расход</option><option value="adjust">Установить остаток</option></select></label>
+    <label>Количество<input id="movementQty" type="number" min="1" step="1" required></label><label>Комментарий<input id="movementNote" maxlength="250" placeholder="Необязательно"></label>
+    <p id="movementMessage" class="message"></p><button class="primary full" type="submit">Провести операцию</button>
+  </form></dialog>
+  <dialog id="inviteDialog"><div class="dialog-form"><div class="dialog-head"><h2>Приглашение команды</h2><button class="close" data-close="inviteDialog">×</button></div><p class="muted">Отправь этот код сотрудникам. Они должны зарегистрировать свои аккаунты и ввести код на этом экране.</p><div id="inviteCodeDisplay" class="invite-code"></div><button id="copyInviteBtn" class="primary full">Скопировать код</button></div></dialog>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="app.js"></script>
+</body></html>
