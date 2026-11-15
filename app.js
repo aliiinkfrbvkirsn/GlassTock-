@@ -28,10 +28,11 @@ window.addEventListener("popstate",()=>{
   closingFromPopState=true;openDialogs[openDialogs.length-1].close();closingFromPopState=false;syncBackButton();return;
  }
  if(!$("developerWorkspaceView").classList.contains("hidden")){
+  if(history.state?.page==="developerWorkspace"){syncBackButton();return;}
   showView("developerView");return;
  }
  if(isPlatformAdmin && !$("developerView").classList.contains("hidden")){
-  showView("developerView");
+  syncBackButton();return;
  }
  syncBackButton();
 });
