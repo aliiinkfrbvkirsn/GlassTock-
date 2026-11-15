@@ -94,12 +94,12 @@ function render(){
   return (!q||t.includes(q))&&(filter==="all"||(filter==="low"&&x.quantity<=x.min_quantity)||(filter==="empty"&&x.quantity===0));
  });
  $("inventoryBody").innerHTML=filtered.map(x=>{
-  const actions='<button class="mini" data-move="'+x.id+'">±</button>'+
-   (membership.role!=="staff"?'<button class="mini" data-edit="'+x.id+'">✎</button><button class="mini" data-delete="'+x.id+'">×</button>':"");
-  return '<tr><td><strong>'+esc(x.make)+' '+esc(x.model)+'</strong><small>'+esc(x.year||"")+'</small></td>'+
-   '<td>'+esc(x.part_number||"—")+'</td><td>'+esc(x.glass_type||"—")+'</td>'+
-   '<td class="qty '+(x.quantity<=x.min_quantity?"low":"good")+'">'+x.quantity+' <small>/ мин. '+x.min_quantity+'</small></td>'+
-   '<td>'+money(x.purchase_price)+' сом</td><td>'+money(x.sale_price)+' сом</td><td class="'+(Number(x.sale_price||0)-Number(x.purchase_price||0)>=0?"good":"low")+'">'+money(Number(x.sale_price||0)-Number(x.purchase_price||0))+' сом</td><td>'+esc(x.supplier||"—")+'</td><td>'+esc(x.location||"—")+'</td><td><div class="row-actions">'+actions+'</div></td></tr>';
+  const actions='<button class="mini action-move" data-move="'+x.id+'" aria-label="Приход или расход" title="Приход / расход"><span aria-hidden="true">＋</span><b>Движение</b></button>'+
+   (membership.role!=="staff"?'<button class="mini action-edit" data-edit="'+x.id+'" aria-label="Изменить позицию" title="Изменить позицию"><span aria-hidden="true">✎</span><b>Изменить</b></button><button class="mini action-delete" data-delete="'+x.id+'" aria-label="Удалить позицию" title="Удалить позицию"><span aria-hidden="true">×</span></button>':"");
+  return '<tr><td data-label="Автомобиль"><strong>'+esc(x.make)+' '+esc(x.model)+'</strong><small>'+esc(x.year||"")+'</small></td>'+
+   '<td data-label="Артикул">'+esc(x.part_number||"—")+'</td><td data-label="Тип стекла">'+esc(x.glass_type||"—")+'</td>'+
+   '<td data-label="Остаток" class="qty '+(x.quantity<=x.min_quantity?"low":"good")+'">'+x.quantity+' <small>/ мин. '+x.min_quantity+'</small></td>'+
+   '<td data-label="Закупка">'+money(x.purchase_price)+' сом</td><td data-label="Продажа">'+money(x.sale_price)+' сом</td><td data-label="Прибыль / шт." class="'+(Number(x.sale_price||0)-Number(x.purchase_price||0)>=0?"good":"low")+'">'+money(Number(x.sale_price||0)-Number(x.purchase_price||0))+' сом</td><td data-label="Поставщик">'+esc(x.supplier||"—")+'</td><td data-label="Место">'+esc(x.location||"—")+'</td><td data-label="Действия"><div class="row-actions">'+actions+'</div></td></tr>';
  }).join("");
  $("emptyState").classList.toggle("hidden",filtered.length>0);
  renderTeam();
