@@ -3,6 +3,10 @@ const SUPABASE_URL = "https://octkotsbkhvcuxwkzopg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gut8UJBnqJIOxDnBOwzAVg_80T6m7u-";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
+function toggleClass(id,name,force){const el=$(id);if(!el)return false;el.classList.toggle(name,force);return true;}
+function addClass(id,name){const el=$(id);if(!el)return false;el.classList.add(name);return true;}
+function removeClass(id,name){const el=$(id);if(!el)return false;el.classList.remove(name);return true;}
+function hasClass(id,name){const el=$(id);return !!el&&el.classList.contains(name);}
 let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[],activeDeveloperWorkspaceId=null,myHistoryRows=[],myHistoryFilter="all",stockFilter="all";
 const views=["bootView","authView","setupView","appView","developerView","developerWorkspaceView"];
 let notifications=[],notificationChannel=null;
@@ -12,7 +16,7 @@ function stopNotificationsRealtime(){
 function renderNotifications(){
  const unread=notifications.filter(n=>!n.is_read).length;
  $("notificationsCount").textContent=unread>99?"99+":String(unread);
- $("notificationsCount").classList.toggle("hidden",unread===0);
+ toggleClass("notificationsCount","hidden",unread===0);
  $("notificationsBtn").setAttribute("aria-label",unread?"Уведомления, непрочитанных: "+unread:"Уведомления");
  const icons={stock_in:"📦",stock_out:"↘️",stock_adjust:"🧮",low_stock:"⚠️",member_joined:"👤",member_removed:"🚪",member_role_changed:"🛡️"};
  $("notificationsList").innerHTML=notifications.length?notifications.map(n=>{
@@ -52,12 +56,12 @@ async function markNotificationRead(id){
  renderNotifications();
 }
 let closingFromPopState=false;
-function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView"||id==="bootView");$("notificationsBtn").classList.toggle("hidden",id!=="appView"||!workspace);syncBackButton();}
+function showView(id){views.forEach(v=>toggleClass(v,"hidden",v!==id));toggleClass("logoutBtn","hidden",id==="authView"||id==="bootView");toggleClass("notificationsBtn","hidden",id!=="appView"||!workspace);syncBackButton();}
 function syncBackButton(){
  const hasDialog=Array.from(document.querySelectorAll("dialog")).some(d=>d.open);
- const hasDetail=!$("developerWorkspaceView").classList.contains("hidden");
+ const hasDetail=!hasClass("developerWorkspaceView","hidden");
  const hasWorkspacePage=history.state?.glassstockNav==="page";
- $("backBtn").classList.toggle("hidden",!(hasDialog||hasDetail||hasWorkspacePage));
+ toggleClass("backBtn","hidden",!(hasDialog||hasDetail||hasWorkspacePage));
 }
 function openDialog(id){
  const dialog=$(id);if(!dialog||dialog.open)return;
@@ -90,8 +94,8 @@ $("backBtn").addEventListener("click",()=>{
  if(history.state?.glassstockNav==="page"){history.back();return;}
  syncBackButton();
 });
-function msg(id,text,ok=false){const el=$(id);el.textContent=text;el.classList.toggle("success",ok);}
-function toast(text){const el=$("toast");el.textContent=text;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2600);}
+function msg(id,text,ok=false){const el=$(id);if(!el)return;el.textContent=text;el.classList.toggle("success",ok);}
+function toast(text){const el=$("toast");if(!el)return;el.textContent=text;el.classList.add("show");setTimeout(()=>{const current=$("toast");if(current)current.classList.remove("show");},2600);}
 function setConnection(text,kind=""){const el=$("connection");el.textContent="● "+text;el.className="status "+kind;}
 function esc(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function normalizeSearchText(value=""){
@@ -155,7 +159,7 @@ $("logoutBtn").addEventListener("click",async()=>{if(!confirm("Вы точно �
 $("ownerLoginBtn").addEventListener("click",async()=>{setTab("login");$("password").value="";msg("authMessage","");await db.auth.signOut();showView("authView");setConnection("Вход для владельца");});
 
 async function routeUser(){
- $("notificationsBtn").classList.add("hidden");
+ addClass("notificationsBtn","hidden");
  stopNotificationsRealtime();notifications=[];renderNotifications();
  setConnection("Загрузка…");
  const adminResult=await db.rpc("is_platform_admin");
@@ -173,11 +177,11 @@ async function routeUser(){
  membership=member;
  const {data:ws,error:wsErr}=await db.from("workspaces").select("id,name,join_code").eq("id",member.workspace_id).single();
  if(wsErr){showView("setupView");msg("setupMessage",wsErr.message);return;}
- workspace=ws; $("workspaceTitle").textContent=ws.name; $("notificationsBtn").classList.remove("hidden");
+ workspace=ws; $("workspaceTitle").textContent=ws.name; removeClass("notificationsBtn","hidden");
  $("userLabel").textContent=currentUser.email+" · "+({owner:"Владелец",staff:"Сотрудник",developer:"Разработчик"}[member.role]||"Сотрудник");
- $("teamBtn").classList.toggle("hidden",member.role!=="owner"&&!isPlatformAdmin);
- $("inviteBtn").classList.toggle("hidden",member.role!=="owner"&&!isPlatformAdmin);
- $("addBtn").classList.toggle("hidden",member.role==="staff");
+ toggleClass("teamBtn","hidden",member.role!=="owner"&&!isPlatformAdmin);
+ toggleClass("inviteBtn","hidden",member.role!=="owner"&&!isPlatformAdmin);
+ toggleClass("addBtn","hidden",member.role==="staff");
  showView("appView"); setConnection(isPlatformAdmin?"Разработчик · полный доступ":"Облако подключено","ok"); await refresh(); startNotificationsRealtime(); await loadNotifications();
 }
 async function renderDeveloperDashboard(){
@@ -260,7 +264,7 @@ $("openMyWorkspaceBtn").addEventListener("click",async()=>{
   if(!workspace){toast("У этого аккаунта пока нет собственного склада");return;}
   history.pushState({glassstockNav:"page",page:"myWorkspace"},"","#my-workspace");
   showView("appView");
-  $("notificationsBtn").classList.remove("hidden");
+  removeClass("notificationsBtn","hidden");
   await refresh();
   startNotificationsRealtime();
   await loadNotifications();
@@ -377,7 +381,7 @@ function render(){
  }).join("");
  const emptyTitle=filtered.length?"":(q?"Ничего не найдено":filter==="low"?"Нет стекол с низким остатком":filter==="empty"?"Нет стекол с нулевым остатком":"Пока нет товаров");
   $("emptyState").innerHTML=filtered.length?"":'<b>'+emptyTitle+'</b><p>'+(q?"Попробуй изменить поисковый запрос.":filter==="all"?"Добавь первую позицию, и она появится у всей команды.":"Для этого фильтра сейчас нет подходящих позиций.")+'</p>';
-  $("emptyState").classList.toggle("hidden",filtered.length>0);
+  toggleClass("emptyState","hidden",filtered.length>0);
   const counts={all:items.length,low,empty:items.filter(x=>Number(x.quantity)===0).length};
   document.querySelectorAll("[data-stock-filter]").forEach(b=>{const key=b.dataset.stockFilter;b.classList.toggle("active",key===stockFilter);b.setAttribute("aria-pressed",String(key===stockFilter));const n=b.querySelector("[data-filter-count]");if(n)n.textContent=counts[key]??0;});
   const filterLabels={all:"Все позиции",low:"Мало на складе",empty:"Нет в наличии"};$("stockFilterCurrent").textContent=filterLabels[stockFilter];$("stockFilterTotal").textContent=counts[stockFilter]??0;
@@ -390,7 +394,7 @@ function render(){
 }
 $("search").addEventListener("input",render);
  $("stockFilterToggle").addEventListener("click",()=>{
-  const menu=$("stockFilterMenu"),open=menu.classList.contains("hidden");
+  const menu=$("stockFilterMenu");if(!menu)return;const open=menu.classList.contains("hidden");
   menu.classList.toggle("hidden",!open);$("stockFilterToggle").setAttribute("aria-expanded",String(open));
  });
  $("stockFilters").addEventListener("click",e=>{
