@@ -184,6 +184,7 @@ async function routeUser(){
  const {data:ws,error:wsErr}=await db.from("workspaces").select("id,name,join_code").eq("id",member.workspace_id).single();
  if(wsErr){showView("setupView");msg("setupMessage",wsErr.message);return;}
  workspace=ws; $("workspaceTitle").textContent=ws.name; removeClass("notificationsBtn","hidden");
+ if(isPlatformAdmin){showView("developerView");setConnection("Комната разработчика","ok");await renderDeveloperDashboard();return;}
  $("userLabel").textContent=currentUser.email+" · "+({owner:"Владелец",staff:"Сотрудник",developer:"Разработчик"}[member.role]||"Сотрудник");
  toggleClass("teamBtn","hidden",member.role!=="owner"&&!isPlatformAdmin);
  toggleClass("inviteBtn","hidden",member.role!=="owner"&&!isPlatformAdmin);
