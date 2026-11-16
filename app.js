@@ -3,7 +3,7 @@ const SUPABASE_URL = "https://octkotsbkhvcuxwkzopg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gut8UJBnqJIOxDnBOwzAVg_80T6m7u-";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
-let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[],activeDeveloperWorkspaceId=null,myHistoryRows=[],myHistoryFilter="all";
+let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[],activeDeveloperWorkspaceId=null,myHistoryRows=[],myHistoryFilter="all",stockFilter="all";
 const views=["bootView","authView","setupView","appView","developerView","developerWorkspaceView"];
 let notifications=[],notificationChannel=null;
 function stopNotificationsRealtime(){
@@ -339,7 +339,7 @@ function renderTeam(){
  }).join("")||'<p class="muted">Пока только владелец.</p>';
 }
 function render(){
- const total=items.reduce((n,x)=>n+x.quantity,0),low=items.filter(x=>x.quantity<=x.min_quantity).length;
+ const total=items.reduce((n,x)=>n+Number(x.quantity||0),0),low=items.filter(x=>Number(x.quantity)>0&&Number(x.quantity)<=Number(x.min_quantity||0)).length;
  const purchaseValue=items.reduce((n,x)=>n+x.quantity*Number(x.purchase_price||0),0);
  const saleValue=items.reduce((n,x)=>n+x.quantity*Number(x.sale_price||0),0);
  const cutoff=Date.now()-30*24*60*60*1000;
@@ -349,10 +349,10 @@ function render(){
  $("statItems").textContent=items.length;$("statQty").textContent=total;$("statLow").textContent=low;
  $("statPurchaseValue").textContent=money(purchaseValue);$("statSaleValue").textContent=money(saleValue);
  $("reportRevenue").textContent=money(revenue)+" сом";$("reportProfit").textContent=money(profit)+" сом";
-  const q=normalizeSearchText($("search").value),filter=$("filter").value;
+  const q=normalizeSearchText($("search").value),filter=stockFilter;
   const filtered=items.filter(x=>{
    const t=normalizeSearchText([x.make,x.model,x.part_number,x.glass_type,x.location,x.year,x.supplier].join(" "));
-   return (!q||t.includes(q))&&(filter==="all"||(filter==="low"&&x.quantity<=x.min_quantity)||(filter==="empty"&&x.quantity===0));
+   return (!q||t.includes(q))&&(filter==="all"||(filter==="low"&&Number(x.quantity)>0&&Number(x.quantity)<=Number(x.min_quantity||0))||(filter==="empty"&&Number(x.quantity)===0));
   });
  $("inventoryBody").innerHTML=filtered.map(x=>{
   const actions='<button class="mini action-qr" data-qr="'+x.id+'" aria-label="QR-этикетка" title="Создать QR-этикетку">QR</button><button class="mini action-move" data-move="'+x.id+'" aria-label="Приход или расход" title="Приход / расход"><span aria-hidden="true">＋</span><b>Движение</b></button>'+
@@ -362,7 +362,11 @@ function render(){
    '<td data-label="Остаток" class="qty '+(x.quantity<=x.min_quantity?"low":"good")+'">'+x.quantity+' <small>/ мин. '+x.min_quantity+'</small></td>'+
    '<td data-label="Закупка">'+money(x.purchase_price)+' сом</td><td data-label="Продажа">'+money(x.sale_price)+' сом</td><td data-label="Прибыль / шт." class="'+(Number(x.sale_price||0)-Number(x.purchase_price||0)>=0?"good":"low")+'">'+money(Number(x.sale_price||0)-Number(x.purchase_price||0))+' сом</td><td data-label="Поставщик">'+esc(x.supplier||"—")+'</td><td data-label="Место">'+esc(x.location||"—")+'</td><td data-label="Действия"><div class="row-actions">'+actions+'</div></td></tr>';
  }).join("");
- $("emptyState").classList.toggle("hidden",filtered.length>0);
+ const emptyTitle=filtered.length?"":(q?"Ничего не найдено":filter==="low"?"Нет стекол с низким остатком":filter==="empty"?"Нет стекол с нулевым остатком":"Пока нет товаров");
+  $("emptyState").innerHTML=filtered.length?"":'<b>'+emptyTitle+'</b><p>'+(q?"Попробуй изменить поисковый запрос.":filter==="all"?"Добавь первую позицию, и она появится у всей команды.":"Для этого фильтра сейчас нет подходящих позиций.")+'</p>';
+  $("emptyState").classList.toggle("hidden",filtered.length>0);
+  const counts={all:items.length,low,empty:items.filter(x=>Number(x.quantity)===0).length};
+  document.querySelectorAll("[data-stock-filter]").forEach(b=>{const key=b.dataset.stockFilter;b.classList.toggle("active",key===stockFilter);b.setAttribute("aria-pressed",String(key===stockFilter));const n=b.querySelector("[data-filter-count]");if(n)n.textContent=counts[key]??0;});
  renderTeam();
  $("historyList").innerHTML=movements.slice(0,25).map(m=>{
   const label=m.movement_type==="in"?"Приход":m.movement_type==="out"?"Расход":"Коррекция";
@@ -370,7 +374,8 @@ function render(){
   return '<div class="history-item"><div><b>'+esc(m.inventory?.make||"Товар")+' '+esc(m.inventory?.model||"")+'</b><small>'+new Date(m.created_at).toLocaleString("ru-RU")+' · '+esc(m.note||"Без комментария")+price+'</small></div><div class="history-type '+m.movement_type+'">'+label+': '+m.quantity+'</div></div>';
  }).join("")||'<p class="muted">Операций пока нет.</p>';
 }
-$("search").addEventListener("input",render);$("filter").addEventListener("change",render);
+$("search").addEventListener("input",render);
+ $("stockFilters").addEventListener("click",e=>{const b=e.target.closest("[data-stock-filter]");if(!b)return;stockFilter=b.dataset.stockFilter;render();});
 $("addBtn").addEventListener("click",()=>openItem());
 function openItem(item=null){
  $("itemForm").reset();$("itemId").value=item?.id||"";$("itemDialogTitle").textContent=item?"Изменить позицию":"Новая позиция";
