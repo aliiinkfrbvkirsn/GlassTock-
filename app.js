@@ -241,7 +241,6 @@ $("markAllNotificationsReadBtn").addEventListener("click",async()=>{
  notifications=notifications.map(n=>({...n,is_read:true}));
  renderNotifications();
 });
-$("developerPanelBtn").addEventListener("click",async()=>{showView("developerView");await renderDeveloperDashboard();});
 $("openMyWorkspaceBtn").addEventListener("click",async()=>{
   if(!workspace){toast("У этого аккаунта пока нет собственного склада");return;}
   history.pushState({glassstockNav:"page",page:"myWorkspace"},"","#my-workspace");
