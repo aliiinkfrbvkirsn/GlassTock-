@@ -285,3 +285,6 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 .page-scroll-controls button::first-letter{
   line-height:1!important;
 }
+
+/* Startup screen */
+.boot-screen{min-height:calc(100vh - 145px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#eaf0f8;text-align:center}.boot-screen .boot-mark{width:62px;height:62px;display:grid;place-items:center;border-radius:20px;background:linear-gradient(135deg,#4ed9c2,#2b8eaf);color:#071522;font-size:34px;font-weight:900;box-shadow:0 12px 38px #35bca933}.boot-screen b{font-size:23px;letter-spacing:.2px}.boot-screen span{font-size:13px;color:#91a2b7}.boot-screen i{width:34px;height:34px;margin-top:10px;border:3px solid #29445a;border-top-color:#59d7c2;border-radius:50%;animation:glassstock-spin .8s linear infinite}@keyframes glassstock-spin{to{transform:rotate(360deg)}}
