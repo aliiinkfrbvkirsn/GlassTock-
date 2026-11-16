@@ -158,13 +158,12 @@ async function routeUser(){
  membership=member;
  const {data:ws,error:wsErr}=await db.from("workspaces").select("id,name,join_code").eq("id",member.workspace_id).single();
  if(wsErr){showView("setupView");msg("setupMessage",wsErr.message);return;}
- workspace=ws;$("workspaceTitle").textContent=ws.name;$("notificationsBtn").classList.toggle("hidden",isPlatformAdmin);
+ workspace=ws; $("workspaceTitle").textContent=ws.name; $("notificationsBtn").classList.remove("hidden"); $("developerPanelBtn").classList.toggle("hidden",!isPlatformAdmin);
  $("userLabel").textContent=currentUser.email+" · "+({owner:"Владелец",staff:"Сотрудник",developer:"Разработчик"}[member.role]||"Сотрудник");
- $("teamBtn").classList.toggle("hidden",member.role!=="owner");
- $("inviteBtn").classList.toggle("hidden",member.role!=="owner");
+ $("teamBtn").classList.toggle("hidden",member.role!=="owner"&&!isPlatformAdmin);
+ $("inviteBtn").classList.toggle("hidden",member.role!=="owner"&&!isPlatformAdmin);
  $("addBtn").classList.toggle("hidden",member.role==="staff");
- if(isPlatformAdmin){showView("developerView");setConnection("Разработчик · облако подключено","ok");await renderDeveloperDashboard();}
- else{showView("appView");setConnection("Облако подключено","ok");await refresh();startNotificationsRealtime();await loadNotifications();}
+ showView("appView"); setConnection(isPlatformAdmin?"Разработчик · полный доступ":"Облако подключено","ok"); await refresh(); startNotificationsRealtime(); await loadNotifications();
 }
 async function renderDeveloperDashboard(){
  msg("platformMessage","Загружаю организации…");
@@ -242,6 +241,7 @@ $("markAllNotificationsReadBtn").addEventListener("click",async()=>{
  notifications=notifications.map(n=>({...n,is_read:true}));
  renderNotifications();
 });
+$("developerPanelBtn").addEventListener("click",async()=>{showView("developerView");await renderDeveloperDashboard();});
 $("openMyWorkspaceBtn").addEventListener("click",async()=>{
   if(!workspace){toast("У этого аккаунта пока нет собственного склада");return;}
   history.pushState({glassstockNav:"page",page:"myWorkspace"},"","#my-workspace");
@@ -323,7 +323,7 @@ async function refresh(){
  const [a,b,c]=await Promise.all([
   db.from("inventory").select("*").eq("workspace_id",workspace.id).order("make").order("model"),
   db.from("stock_movements").select("id,inventory_id,user_id,movement_type,quantity,note,created_at,unit_price,unit_cost,inventory(make,model)").eq("workspace_id",workspace.id).order("created_at",{ascending:false}).limit(500),
-  membership?.role==="owner"?db.rpc("list_workspace_members"):{data:[],error:null}
+  (membership?.role==="owner"||isPlatformAdmin)?db.rpc("list_workspace_members"):{data:[],error:null}
  ]);
  if(a.error||b.error){toast("Ошибка загрузки: "+(a.error||b.error).message);return;}
  items=a.data||[];movements=b.data||[];teamMembers=c.data||[];render();
@@ -331,7 +331,7 @@ async function refresh(){
  if(linkedItem){const found=items.find(x=>x.id===linkedItem);if(found){$("search").value=[found.make,found.model,found.part_number||""].join(" ");render();toast("Найдено стекло: "+found.make+" "+found.model);}}
 }
 function renderTeam(){
- if(membership?.role!=="owner")return;
+ if(membership?.role!=="owner"&&!isPlatformAdmin)return;
  $("teamList").innerHTML=teamMembers.map(m=>{
   const who=m.user_id===currentUser.id?"Ты":esc(m.user_id.slice(0,8)+"…");
   if(m.role==="owner")return '<div class="team-row"><div><b>'+who+'</b><small>Владелец</small></div></div>';
@@ -400,7 +400,7 @@ $("inventoryBody").addEventListener("click",async e=>{
  if(qr){openQrLabel(items.find(x=>x.id===qr.dataset.qr));}
  if(edit){openItem(items.find(x=>x.id===edit.dataset.edit));}
  if(move){const x=items.find(x=>x.id===move.dataset.move);$("movementForm").reset();$("movementItemId").value=x.id;$("movementItemName").textContent=x.make+" "+x.model+" · остаток "+x.quantity;setMovementPrice(x);openDialog("movementDialog");}
- if(del){const x=items.find(x=>x.id===del.dataset.delete);if(!confirm("Удалить "+x.make+" "+x.model+"?"))return;const {error}=await db.from("inventory").delete().eq("id",x.id);if(error)toast(error.message);else{toast("Позиция удалена");await refresh();}}
+ if(del){const x=items.find(x=>x.id===del.dataset.delete);if(!x)return;if(!confirm("Удалить "+x.make+" "+x.model+"?"))return;const {data,error}=await db.from("inventory").delete().eq("id",x.id).select("id");if(error){toast("Не удалось удалить: "+error.message);return;}if(!data?.length){toast("Удаление не выполнено: нет прав или позиция уже удалена");return;}toast("Позиция удалена");await refresh();}
 });
 $("itemForm").addEventListener("submit",async e=>{
  e.preventDefault();const id=$("itemId").value;
