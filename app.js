@@ -104,12 +104,27 @@ function setTab(next){tab=next;document.querySelectorAll(".tab").forEach(b=>b.cl
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
 document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>$(b.dataset.close).close()));
 
+function withTimeout(promise,ms){
+ return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error("timeout")),ms))]);
+}
 async function init(){
  setConnection("Проверка…");
- const {data:{session},error}=await db.auth.getSession();
- if(error){showView("authView");setConnection("Ошибка проверки сессии","bad");msg("authMessage","Не удалось проверить вход. Попробуй обновить страницу.");return;}
- if(session){currentUser=session.user;await routeUser();}else{showView("authView");setConnection("Не выполнен вход");}
- db.auth.onAuthStateChange((_event,session)=>{setTimeout(async()=>{currentUser=session?.user||null;if(currentUser)await routeUser();else{stopNotificationsRealtime();notifications=[];renderNotifications();workspace=null;showView("authView");setConnection("Не выполнен вход");}},0);});
+ try{
+  const {data:{session},error}=await withTimeout(db.auth.getSession(),15000);
+  if(error)throw error;
+  if(session){
+   currentUser=session.user;
+   await withTimeout(routeUser(),20000);
+  }else{
+   showView("authView");
+   setConnection("Не выполнен вход");
+  }
+  db.auth.onAuthStateChange((_event,session)=>{setTimeout(async()=>{currentUser=session?.user||null;if(currentUser)await routeUser();else{stopNotificationsRealtime();notifications=[];renderNotifications();workspace=null;showView("authView");setConnection("Не выполнен вход");}},0);});
+ }catch(error){
+  showView("authView");
+  setConnection("Нет ответа от сервера","bad");
+  msg("authMessage",error.message==="timeout"?"Сервер отвечает слишком долго. Проверь интернет и попробуй войти ещё раз.":"Не удалось подключиться: "+(error.message||"неизвестная ошибка"));
+ }
 }
 $("authForm").addEventListener("submit",async e=>{
  e.preventDefault();msg("authMessage","");$("authSubmit").disabled=true;
