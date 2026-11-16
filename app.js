@@ -367,6 +367,7 @@ function render(){
   $("emptyState").classList.toggle("hidden",filtered.length>0);
   const counts={all:items.length,low,empty:items.filter(x=>Number(x.quantity)===0).length};
   document.querySelectorAll("[data-stock-filter]").forEach(b=>{const key=b.dataset.stockFilter;b.classList.toggle("active",key===stockFilter);b.setAttribute("aria-pressed",String(key===stockFilter));const n=b.querySelector("[data-filter-count]");if(n)n.textContent=counts[key]??0;});
+  const filterLabels={all:"Все позиции",low:"Мало на складе",empty:"Нет в наличии"};$("stockFilterCurrent").textContent=filterLabels[stockFilter];$("stockFilterTotal").textContent=counts[stockFilter]??0;
  renderTeam();
  $("historyList").innerHTML=movements.slice(0,25).map(m=>{
   const label=m.movement_type==="in"?"Приход":m.movement_type==="out"?"Расход":"Коррекция";
@@ -375,7 +376,17 @@ function render(){
  }).join("")||'<p class="muted">Операций пока нет.</p>';
 }
 $("search").addEventListener("input",render);
- $("stockFilters").addEventListener("click",e=>{const b=e.target.closest("[data-stock-filter]");if(!b)return;stockFilter=b.dataset.stockFilter;render();});
+ $("stockFilterToggle").addEventListener("click",()=>{
+  const menu=$("stockFilterMenu"),open=menu.classList.contains("hidden");
+  menu.classList.toggle("hidden",!open);$("stockFilterToggle").setAttribute("aria-expanded",String(open));
+ });
+ $("stockFilters").addEventListener("click",e=>{
+  const option=e.target.closest("[data-stock-filter]");
+  if(option){stockFilter=option.dataset.stockFilter;$("stockFilterMenu").classList.add("hidden");$("stockFilterToggle").setAttribute("aria-expanded","false");render();return;}
+ });
+ document.addEventListener("click",e=>{if(!$("stockFilters").contains(e.target)){$("stockFilterMenu").classList.add("hidden");$("stockFilterToggle").setAttribute("aria-expanded","false");}});
+ document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("stockFilterMenu").classList.add("hidden");$("stockFilterToggle").setAttribute("aria-expanded","false");}});
+
 $("addBtn").addEventListener("click",()=>openItem());
 function openItem(item=null){
  $("itemForm").reset();$("itemId").value=item?.id||"";$("itemDialogTitle").textContent=item?"Изменить позицию":"Новая позиция";
