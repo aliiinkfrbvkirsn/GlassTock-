@@ -173,7 +173,7 @@ async function routeUser(){
  membership=member;
  const {data:ws,error:wsErr}=await db.from("workspaces").select("id,name,join_code").eq("id",member.workspace_id).single();
  if(wsErr){showView("setupView");msg("setupMessage",wsErr.message);return;}
- workspace=ws; $("workspaceTitle").textContent=ws.name; $("notificationsBtn").classList.remove("hidden"); $("developerPanelBtn").classList.toggle("hidden",!isPlatformAdmin);
+ workspace=ws; $("workspaceTitle").textContent=ws.name; $("notificationsBtn").classList.remove("hidden");
  $("userLabel").textContent=currentUser.email+" · "+({owner:"Владелец",staff:"Сотрудник",developer:"Разработчик"}[member.role]||"Сотрудник");
  $("teamBtn").classList.toggle("hidden",member.role!=="owner"&&!isPlatformAdmin);
  $("inviteBtn").classList.toggle("hidden",member.role!=="owner"&&!isPlatformAdmin);
