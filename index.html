@@ -98,5 +98,50 @@
   <dialog id="teamDialog"><div class="dialog-form"><div class="dialog-head"><h2>Команда склада</h2><button class="close" data-close="teamDialog">×</button></div><p class="muted">Менеджер редактирует товары и цены. Сотрудник проводит приход и расход.</p><div id="teamList" class="team-list"></div></div></dialog>
   <div class="page-scroll-controls" aria-label="Прокрутка страницы"><button id="scrollTopBtn" type="button" aria-label="Вверх" title="Вверх">↑</button><button id="scrollBottomBtn" type="button" aria-label="Вниз" title="Вниз">↓</button></div>
   <div id="toast" class="toast" role="status"></div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><script src="app.js?v=33"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+  (async function(){
+    const boot=document.getElementById("bootView");
+    const showBootError=(message)=>{
+      const text=boot.querySelector("span");
+      if(text)text.textContent=message;
+      const spinner=boot.querySelector("i");
+      if(spinner)spinner.style.display="none";
+      let retry=document.getElementById("bootRetry");
+      if(!retry){
+        retry=document.createElement("button");
+        retry.id="bootRetry";
+        retry.type="button";
+        retry.textContent="Попробовать снова";
+        retry.style.cssText="margin-top:22px;padding:13px 22px;border:1px solid #456078;border-radius:12px;background:#20364b;color:#fff;font:inherit";
+        retry.addEventListener("click",()=>location.reload());
+        boot.appendChild(retry);
+      }
+    };
+    const sources=["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2","https://unpkg.com/@supabase/supabase-js@2"];
+    let loaded=false;
+    for(const src of sources){
+      try{
+        await new Promise((resolve,reject)=>{
+          const script=document.createElement("script");
+          const timer=setTimeout(()=>{script.remove();reject(new Error("timeout"));},12000);
+          script.src=src;
+          script.onload=()=>{clearTimeout(timer);window.supabase?.createClient?resolve():reject(new Error("library unavailable"));};
+          script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error("network error"));};
+          document.head.appendChild(script);
+        });
+        loaded=true;
+        break;
+      }catch(error){}
+    }
+    if(!loaded){
+      showBootError("Не удалось загрузить модуль подключения. Проверь интернет и нажми «Попробовать снова».");
+      return;
+    }
+    const app=document.createElement("script");
+    app.src="app.js?v=34";
+    app.onerror=()=>showBootError("Не удалось загрузить приложение. Обнови страницу.");
+    document.body.appendChild(app);
+  })();
+  </script>
 </body></html>
