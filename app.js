@@ -114,11 +114,25 @@ async function init(){
 $("authForm").addEventListener("submit",async e=>{
  e.preventDefault();msg("authMessage","");$("authSubmit").disabled=true;
  const email=$("email").value.trim(),password=$("password").value;
- const result=tab==="signup"?await db.auth.signUp({email,password,options:{emailRedirectTo:"https://aliiinkfrbvkirsn.github.io/GlassTock-/"}}):await db.auth.signInWithPassword({email,password});
- $("authSubmit").disabled=false;
- if(result.error){msg("authMessage",result.error.message);return;}
- if(tab==="signup"&&!result.data.session){msg("authMessage","Аккаунт создан. Проверь почту и подтверди адрес, затем войди.",true);return;}
- currentUser=result.data.user;await routeUser();
+ try{
+  const result=tab==="signup"?await db.auth.signUp({email,password}):await db.auth.signInWithPassword({email,password});
+  if(result.error)throw result.error;
+  if(tab==="signup"){
+   if(!result.data.session){msg("authMessage","Аккаунт создан, но Supabase всё ещё требует подтверждение почты. Нужно отключить Confirm email в настройках Auth.");return;}
+   currentUser=result.data.user;
+   await db.auth.signOut();currentUser=null;
+   $("signupSuccessEmail").textContent=email;
+   $("signupSuccessDialog").showModal();
+   return;
+  }
+  currentUser=result.data.user;await routeUser();
+ }catch(error){msg("authMessage",error.message||"Не удалось выполнить операцию.");}
+ finally{$("authSubmit").disabled=false;}
+});
+$("signupSuccessLoginBtn").addEventListener("click",()=>{
+ $("signupSuccessDialog").close();setTab("login");$("password").value="";
+ msg("authMessage","Регистрация завершена. Теперь войди в аккаунт.",true);
+ showView("authView");$("password").focus();
 });
 $("logoutBtn").addEventListener("click",async()=>{if(!confirm("Вы точно хотите выйти из аккаунта?"))return;await db.auth.signOut();});
  $("scrollTopBtn").addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
