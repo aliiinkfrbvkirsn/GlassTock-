@@ -10,6 +10,7 @@ function hasClass(id,name){const el=$(id);return !!el&&el.classList.contains(nam
 let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[],activeDeveloperWorkspaceId=null,myHistoryRows=[],myHistoryFilter="all",stockFilter="all";
 const views=["bootView","authView","setupView","appView","developerView","developerWorkspaceView"];
 let notifications=[],notificationChannel=null;
+let initStage="запуск";
 function stopNotificationsRealtime(){
  if(notificationChannel){db.removeChannel(notificationChannel);notificationChannel=null;}
 }
@@ -114,20 +115,25 @@ function withTimeout(promise,ms){
 async function init(){
  setConnection("Проверка…");
  try{
+  initStage="получение сессии";
   const {data:{session},error}=await withTimeout(db.auth.getSession(),15000);
   if(error)throw error;
   if(session){
+   initStage="проверка доступа к складу";
    currentUser=session.user;
    await withTimeout(routeUser(),20000);
   }else{
+   initStage="показ формы входа";
    showView("authView");
    setConnection("Не выполнен вход");
   }
+  initStage="подписка на изменения авторизации";
   db.auth.onAuthStateChange((_event,session)=>{setTimeout(async()=>{currentUser=session?.user||null;if(currentUser)await routeUser();else{stopNotificationsRealtime();notifications=[];renderNotifications();workspace=null;showView("authView");setConnection("Не выполнен вход");}},0);});
  }catch(error){
+  const stack=error&&error.stack?String(error.stack):String(error?.message||error);
   showView("authView");
-  setConnection("Нет ответа от сервера","bad");
-  msg("authMessage",error.message==="timeout"?"Сервер отвечает слишком долго. Проверь интернет и попробуй войти ещё раз.":"Не удалось подключиться: "+(error.message||"неизвестная ошибка"));
+  setConnection("Ошибка запуска","bad");
+  msg("authMessage","Этап: "+initStage+"\n"+stack);
  }
 }
 $("authForm").addEventListener("submit",async e=>{
