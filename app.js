@@ -261,7 +261,6 @@ $("platformWorkspaceList").addEventListener("click",e=>{
  const button=e.target.closest("[data-open-workspace]");
  if(button)openDeveloperWorkspace(button.dataset.openWorkspace);
 });
-$("backToDeveloperBtn").addEventListener("click",()=>{if(history.state?.glassstockNav==="page")history.back();else showView("developerView");});
 async function openDeveloperWorkspace(id){
  const selected=developerWorkspaces.find(x=>x.id===id);
  if(!selected)return;
