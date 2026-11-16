@@ -7,7 +7,7 @@
   <meta name="description" content="GlassStock — общий учёт стекла на складе">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
   <title>GlassStock — склад стекла</title>
 </head>
 <body>
@@ -16,7 +16,8 @@
     <div class="top-actions"><button id="notificationsBtn" class="top-notifications hidden" type="button" aria-label="Уведомления">🔔<span id="notificationsCount" class="notification-count hidden">0</span></button><button id="backBtn" class="ghost hidden" type="button" aria-label="Назад">← Назад</button><span id="connection" class="status">● Подключение</span><button id="logoutBtn" class="ghost hidden">Выйти</button></div>
   </header>
   <main>
-    <section id="authView" class="auth-wrap"><div class="auth-card">
+    <section id="bootView" class="boot-screen" aria-live="polite"><div class="boot-mark">G</div><b>GlassStock</b><span>Подключаем твой склад…</span><i></i></section>
+    <section id="authView" class="auth-wrap hidden"><div class="auth-card">
       <div class="eyebrow">ОБЛАЧНЫЙ СКЛАД</div><h1>Весь склад<br><span>в одном месте.</span></h1>
       <p class="muted">Войди или зарегистрируйся. <b>Если ты сотрудник:</b> выбери «Регистрация», создай аккаунт и подтверди почту. После входа появится поле для кода приглашения от владельца. Не создавай отдельный склад.</p>
       <div class="tabs"><button class="tab active" data-tab="login">Вход</button><button class="tab" data-tab="signup">Регистрация</button></div>
@@ -97,5 +98,5 @@
   <dialog id="teamDialog"><div class="dialog-form"><div class="dialog-head"><h2>Команда склада</h2><button class="close" data-close="teamDialog">×</button></div><p class="muted">Менеджер редактирует товары и цены. Сотрудник проводит приход и расход.</p><div id="teamList" class="team-list"></div></div></dialog>
   <div class="page-scroll-controls" aria-label="Прокрутка страницы"><button id="scrollTopBtn" type="button" aria-label="Вверх" title="Вверх">↑</button><button id="scrollBottomBtn" type="button" aria-label="Вниз" title="Вниз">↓</button></div>
   <div id="toast" class="toast" role="status"></div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><script src="app.js?v=27"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><script src="app.js?v=28"></script>
 </body></html>
