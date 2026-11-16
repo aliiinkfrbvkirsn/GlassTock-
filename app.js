@@ -159,7 +159,7 @@ async function routeUser(){
  const {data:ws,error:wsErr}=await db.from("workspaces").select("id,name,join_code").eq("id",member.workspace_id).single();
  if(wsErr){showView("setupView");msg("setupMessage",wsErr.message);return;}
  workspace=ws;$("workspaceTitle").textContent=ws.name;$("notificationsBtn").classList.toggle("hidden",isPlatformAdmin);
- $("userLabel").textContent=currentUser.email+" · "+({owner:"Владелец",staff:"Сотрудник"}[member.role]||"Сотрудник");
+ $("userLabel").textContent=currentUser.email+" · "+({owner:"Владелец",staff:"Сотрудник",developer:"Разработчик"}[member.role]||"Сотрудник");
  $("teamBtn").classList.toggle("hidden",member.role!=="owner");
  $("inviteBtn").classList.toggle("hidden",member.role!=="owner");
  $("addBtn").classList.toggle("hidden",member.role==="staff");
@@ -183,7 +183,7 @@ async function renderDeveloperDashboard(){
  $("platformStockCount").textContent=stock.reduce((sum,row)=>sum+Number(row.quantity||0),0);
  $("platformMembersList").innerHTML=members.map(m=>{
   const ws=workspaces.find(x=>x.id===m.workspace_id);
-  const role=m.role==="owner"?"Владелец":"Сотрудник";
+  const role=m.role==="owner"?"Владелец":m.role==="developer"?"Разработчик":"Сотрудник";
   return '<div class="team-row"><div><b>'+esc(m.user_id.slice(0,8))+'…</b><small>'+esc(ws?.name||"Компания")+' · '+role+'</small></div><button class="mini" data-open-member-workspace="'+m.workspace_id+'">Открыть</button></div>';
  }).join("")||'<p class="muted">Участников пока нет.</p>';
  $("platformWorkspaceList").innerHTML=workspaces.map(ws=>{
@@ -278,9 +278,9 @@ async function openDeveloperWorkspace(id){
   $("devProductsCount").textContent=products.length;
   $("devQuantityCount").textContent=products.reduce((sum,x)=>sum+Number(x.quantity||0),0);
   $("devTeamList").innerHTML=members.map(m=>{
-   const label=m.role==="owner"?"Владелец":"Сотрудник";
+   const label=m.role==="owner"?"Владелец":m.role==="developer"?"Разработчик":"Сотрудник";
    const who=m.user_id===currentUser.id?"Ты":m.user_id.slice(0,8)+"…";
-   const remove=m.role==="owner"?"":'<button class="mini member-remove" data-dev-remove="'+m.user_id+'">Удалить</button>';
+   const remove=(m.role==="owner"||m.role==="developer")?"":'<button class="mini member-remove" data-dev-remove="'+m.user_id+'">Удалить</button>';
    return '<div class="team-row"><div><b>'+esc(who)+'</b><small>'+label+'</small></div>'+remove+'</div>';
   }).join("")||'<p class="muted">Участников пока нет.</p>';
   $("devInventoryBody").innerHTML=products.map(x=>'<tr><td data-label="Автомобиль"><strong>'+esc(x.make)+' '+esc(x.model)+'</strong><small>'+esc(x.year||"")+'</small></td><td data-label="Артикул">'+esc(x.part_number||"—")+'</td><td data-label="Тип">'+esc(x.glass_type||"—")+'</td><td data-label="Количество">'+x.quantity+'</td><td data-label="Закупка">'+money(x.purchase_price)+' сом</td><td data-label="Продажа">'+money(x.sale_price)+' сом</td><td data-label="Поставщик">'+esc(x.supplier||"—")+'</td><td data-label="Место">'+esc(x.location||"—")+'</td></tr>').join("")||'<tr><td colspan="8">В этом складе пока нет товаров.</td></tr>';
