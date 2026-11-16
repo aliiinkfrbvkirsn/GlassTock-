@@ -4,7 +4,7 @@ const SUPABASE_KEY = "sb_publishable_gut8UJBnqJIOxDnBOwzAVg_80T6m7u-";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
 let tab="login",currentUser=null,workspace=null,membership=null,items=[],movements=[],teamMembers=[],isPlatformAdmin=false,developerWorkspaces=[],activeDeveloperWorkspaceId=null,myHistoryRows=[],myHistoryFilter="all";
-const views=["authView","setupView","appView","developerView","developerWorkspaceView"];
+const views=["bootView","authView","setupView","appView","developerView","developerWorkspaceView"];
 let notifications=[],notificationChannel=null;
 function stopNotificationsRealtime(){
  if(notificationChannel){db.removeChannel(notificationChannel);notificationChannel=null;}
@@ -52,7 +52,7 @@ async function markNotificationRead(id){
  renderNotifications();
 }
 let closingFromPopState=false;
-function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView");$("notificationsBtn").classList.toggle("hidden",id!=="appView"||!workspace);syncBackButton();}
+function showView(id){views.forEach(v=>$(v).classList.toggle("hidden",v!==id));$("logoutBtn").classList.toggle("hidden",id==="authView"||id==="bootView");$("notificationsBtn").classList.toggle("hidden",id!=="appView"||!workspace);syncBackButton();}
 function syncBackButton(){
  const hasDialog=Array.from(document.querySelectorAll("dialog")).some(d=>d.open);
  const hasDetail=!$("developerWorkspaceView").classList.contains("hidden");
@@ -73,20 +73,22 @@ window.addEventListener("popstate",()=>{
  if(openDialogs.length){
   closingFromPopState=true;openDialogs[openDialogs.length-1].close();closingFromPopState=false;syncBackButton();return;
  }
- if(!$("developerWorkspaceView").classList.contains("hidden")){
-  if(history.state?.page==="developerWorkspace"){syncBackButton();return;}
+ if(isPlatformAdmin && (history.state?.page==="myWorkspace" || history.state?.page==="developerWorkspace" || !$("developerWorkspaceView").classList.contains("hidden") || !$("appView").classList.contains("hidden"))){
   showView("developerView");return;
  }
- if(isPlatformAdmin && !$("developerView").classList.contains("hidden")){
-  syncBackButton();return;
- }
+ if(!$("developerWorkspaceView").classList.contains("hidden")){showView("developerView");return;}
  syncBackButton();
 });
 $("backBtn").addEventListener("click",()=>{
- if(history.state?.glassstockNav==="dialog"||history.state?.glassstockNav==="page"){history.back();return;}
  const openDialogs=Array.from(document.querySelectorAll("dialog[open]"));
- if(openDialogs.length)openDialogs[openDialogs.length-1].close();
- else if(!$("developerWorkspaceView").classList.contains("hidden"))showView("developerView");
+ if(openDialogs.length){openDialogs[openDialogs.length-1].close();return;}
+ if(isPlatformAdmin && (!$("developerWorkspaceView").classList.contains("hidden") || (!$("appView").classList.contains("hidden") && history.state?.page==="myWorkspace"))){
+  if(history.state?.glassstockNav==="page")history.back();
+  else showView("developerView");
+  return;
+ }
+ if(history.state?.glassstockNav==="page"){history.back();return;}
+ syncBackButton();
 });
 function msg(id,text,ok=false){const el=$(id);el.textContent=text;el.classList.toggle("success",ok);}
 function toast(text){const el=$("toast");el.textContent=text;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2600);}
@@ -105,7 +107,7 @@ document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",
 async function init(){
  setConnection("Проверка…");
  const {data:{session},error}=await db.auth.getSession();
- if(error){setConnection("Ошибка","bad");return;}
+ if(error){showView("authView");setConnection("Ошибка проверки сессии","bad");msg("authMessage","Не удалось проверить вход. Попробуй обновить страницу.");return;}
  if(session){currentUser=session.user;await routeUser();}else{showView("authView");setConnection("Не выполнен вход");}
  db.auth.onAuthStateChange((_event,session)=>{setTimeout(async()=>{currentUser=session?.user||null;if(currentUser)await routeUser();else{stopNotificationsRealtime();notifications=[];renderNotifications();workspace=null;showView("authView");setConnection("Не выполнен вход");}},0);});
 }
