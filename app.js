@@ -453,6 +453,8 @@ $("inventoryBody").addEventListener("click",e=>{const btn=e.target.closest("[dat
 $("printQrBtn").addEventListener("click",()=>window.print());
 function setMovementPrice(item){
  const type=$("movementType").value;
+ const adjustOption=$("movementType").querySelector('option[value="adjust"]');
+ if(adjustOption)adjustOption.disabled=membership?.role==="staff"&&!isPlatformAdmin;
  $("movementPrice").value=type==="in"?(item?.purchase_price??0):type==="out"?(item?.sale_price??0):"";
  $("movementPrice").disabled=type==="adjust";
 }
